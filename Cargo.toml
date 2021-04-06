@@ -1,0 +1,20 @@
+[package]
+name = "bevy_vox_mesh"
+version = "0.1.0"
+authors = ["Lucas A. <game4allyt@gmail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+bevy = { version = "0.4", default-features = false }
+dot_vox = "4.1.0"
+building-blocks = { version = "0.6.0", default-features = false, features = ["mesh"] }
+anyhow = "1.0.38"
+
+[dev-dependencies]
+bevy = "0.4.0"
+
+[[example]]
+name = "basic"
+path = "examples/basic.rs"
