@@ -1,6 +1,8 @@
 use bevy::prelude::*;
 
 mod loader;
+mod mesh;
+mod mesher;
 
 pub struct VoxMeshPlugin;
 

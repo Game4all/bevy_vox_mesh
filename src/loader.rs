@@ -9,7 +9,7 @@ impl AssetLoader for VoxLoader {
         &'a self,
         bytes: &'a [u8],
         load_context: &'a mut LoadContext,
-    ) -> bevy::utils::BoxedFuture<'a, Result<(), anyhow::Error>> {
+    ) -> bevy::utils::BoxedFuture<'a, Result<(), Error>> {
         Box::pin(async move {
             load_magica_voxel_file(bytes, load_context)?;
             Ok(())
@@ -24,7 +24,7 @@ impl AssetLoader for VoxLoader {
 fn load_magica_voxel_file<'a>(
     bytes: &'a [u8],
     load_context: &'a mut LoadContext,
-) -> Result<(), anyhow::Error> {
+) -> Result<(), Error> {
     let file = match dot_vox::load_bytes(bytes) {
         Ok(data) => data,
         Err(error) => return Err(anyhow!(error)),
