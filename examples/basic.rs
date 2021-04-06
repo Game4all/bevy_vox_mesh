@@ -8,42 +8,8 @@ use bevy::{
 use bevy_vox_mesh::VoxMeshPlugin;
 use std::f32::consts::PI;
 
-const BASIC_COLOR_VERT: &str = r#"#version 450
-
-layout(location = 0) in vec4 Vertex_Position;
-layout(location = 1) in vec4 Vertex_Color;
-layout(location = 0) out vec4 vertex_color;
-
-layout(set = 0, binding = 0) uniform CameraViewProj {
-    mat4 ViewProj;
-};
-
-layout(set = 1, binding = 0) uniform Transform {
-    mat4 Model;
-};
-
-void main() {
-    gl_Position = ViewProj * Model * Vertex_Position;
-    vertex_color = Vertex_Color;
-}"#;
-
-const BASIC_COLOR_FRAG: &str = r#"#version 450
-
-layout(location = 0) in vec4 vertex_color;
-layout(location = 0) out vec4 o_Target;
-
-vec4 toLinear(vec4 sRGB)
-{
-    bvec4 cutoff = lessThan(sRGB, vec4(0.04045));
-    vec4 higher = pow((sRGB + vec4(0.055))/vec4(1.055), vec4(2.4));
-    vec4 lower = sRGB/vec4(12.92);
-
-    return mix(higher, lower, cutoff);
-}
-
-void main() {
-    o_Target = toLinear(vertex_color);
-}"#;
+#[path = "shaders.rs"]
+mod shaders;
 
 fn main() {
     App::build()
@@ -62,8 +28,14 @@ fn setup(
     assets: ResMut<AssetServer>,
 ) {
     let handle = pipelines.add(PipelineDescriptor::default_config(ShaderStages {
-        vertex: shaders.add(Shader::from_glsl(ShaderStage::Vertex, BASIC_COLOR_VERT)),
-        fragment: Some(shaders.add(Shader::from_glsl(ShaderStage::Fragment, BASIC_COLOR_FRAG))),
+        vertex: shaders.add(Shader::from_glsl(
+            ShaderStage::Vertex,
+            shaders::BASIC_COLOR_VERT,
+        )),
+        fragment: Some(shaders.add(Shader::from_glsl(
+            ShaderStage::Fragment,
+            shaders::BASIC_COLOR_FRAG,
+        ))),
     }));
 
     commands.spawn_bundle(PbrBundle {
