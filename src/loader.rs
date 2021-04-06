@@ -1,8 +1,10 @@
 use anyhow::{anyhow, Error};
-use bevy::asset::{AssetLoader, LoadContext};
+use bevy::asset::{AssetLoader, LoadContext, LoadedAsset};
 
 #[derive(Default)]
 pub struct VoxLoader;
+
+use crate::mesher::mesh_model;
 
 impl AssetLoader for VoxLoader {
     fn load<'a>(
@@ -17,7 +19,7 @@ impl AssetLoader for VoxLoader {
     }
 
     fn extensions(&self) -> &[&str] {
-        &[".vox"]
+        &["vox"]
     }
 }
 
@@ -35,6 +37,17 @@ fn load_magica_voxel_file<'a>(
         .iter()
         .map(|color| color.to_le_bytes())
         .collect();
+
+    for (index, model) in file.models.iter().enumerate() {
+        let mesh = mesh_model(model, &palette);
+
+        match index {
+            0 => load_context.set_default_asset(LoadedAsset::new(mesh)),
+            _ => {
+                load_context.set_labeled_asset(&format!("Model{}", index), LoadedAsset::new(mesh));
+            }
+        }
+    }
 
     Ok(())
 }
