@@ -53,7 +53,7 @@ pub(crate) fn mesh_model(model: &dot_vox::Model, palette: &Vec<[u8; 4]>) -> Mesh
             model.size.y as i32,
             model.size.z as i32,
         ]),
-    );
+    ).padded(1);
 
     let mut voxels = Array3x1::fill(extent, Voxel::Empty);
 
