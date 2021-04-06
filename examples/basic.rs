@@ -6,6 +6,7 @@ use bevy::{
     },
 };
 use bevy_vox_mesh::VoxMeshPlugin;
+use std::f32::consts::PI;
 
 const BASIC_COLOR_VERT: &str = r#"#version 450
 
@@ -76,7 +77,8 @@ fn setup(
     commands.spawn_bundle(MeshBundle {
         mesh: mesh,
         render_pipelines: RenderPipelines::from_pipelines(vec![RenderPipeline::new(handle)]),
-        transform: Transform::from_scale((0.01, 0.01, 0.01).into()),
+        transform: Transform::from_scale((0.01, 0.01, 0.01).into())
+            * Transform::from_rotation(Quat::from_axis_angle(Vec3::Y, PI)),
         ..Default::default()
     });
 
@@ -85,7 +87,7 @@ fn setup(
         transform: Transform::from_xyz(4.0, 8.0, 4.0),
         ..Default::default()
     });
-    
+
     // camera
     commands.spawn_bundle(PerspectiveCameraBundle {
         transform: Transform::from_xyz(-2.0, 2.5, 5.0).looking_at(Vec3::ZERO, Vec3::Y),
