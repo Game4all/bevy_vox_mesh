@@ -7,13 +7,13 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-bevy = { git = "https://github.com/bevyengine/bevy", branch = "main", default-features = false, features = ["render"] }
+bevy = { version = "0.5.0", default-features = false, features = ["render"] }
 dot_vox = "4.1.0"
 building-blocks = { version = "0.6.0", default-features = false, features = ["mesh"] }
 anyhow = "1.0.38"
 
 [dev-dependencies]
-bevy = { git = "https://github.com/bevyengine/bevy", branch = "main" }
+bevy = "0.5.0"
 
 [[example]]
 name = "basic"

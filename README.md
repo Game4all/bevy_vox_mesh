@@ -5,7 +5,7 @@ A plugin for the bevy engine which allows loading magica voxel `.vox` files dire
 
 | Bevy version | Plugin version |
 |--------------|----------------|
-|    0.5       |      TBD       |
+|    0.5       |      0.1       |
 |              |                |
 
 ![demo screenshot](assets/screenshot.PNG)
