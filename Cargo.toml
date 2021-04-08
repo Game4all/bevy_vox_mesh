@@ -3,6 +3,7 @@ name = "bevy_vox_mesh"
 description = "A bevy engine plugin for loading magica voxel files directly in bevy as usable meshes."
 license = "MIT"
 version = "0.1.0"
+repository = "https://github.com/Game4all/bevy_vox_mesh"
 authors = ["Lucas A. <game4allyt@gmail.com>"]
 edition = "2018"
 exclude = ["assets/*"]
