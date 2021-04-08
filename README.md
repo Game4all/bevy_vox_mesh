@@ -3,11 +3,6 @@
 
 A plugin for the bevy engine which allows loading magica voxel `.vox` files directly into usable meshes. 
 
-| Bevy version | Plugin version |
-|--------------|----------------|
-|    0.5       |      0.1       |
-|              |                |
-
 ![demo screenshot](assets/screenshot.PNG)
 
 # Usage
@@ -55,3 +50,10 @@ fn setup(mut meshes: ResMut<Assets<Mesh>>,
 
 
 ```
+
+# Bevy compatibility
+
+| Bevy version | Plugin version |
+|--------------|----------------|
+|    0.5       |      0.1       |
+|              |                |
