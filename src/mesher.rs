@@ -45,7 +45,7 @@ impl MergeVoxel for Voxel {
     }
 }
 
-pub(crate) fn mesh_model(model: &dot_vox::Model, palette: &Vec<[u8; 4]>) -> Mesh {
+pub(crate) fn mesh_model(model: &dot_vox::Model, palette: &[[u8; 4]]) -> Mesh {
     let extent = Extent3i::from_min_and_shape(
         PointN([0, 0, 0]),
         PointN([

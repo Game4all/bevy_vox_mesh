@@ -15,7 +15,7 @@ impl VoxMesh {
         face: &OrientedCubeFace,
         quad: &UnorientedQuad,
         palette_index: u32,
-        palette: &Vec<[u8; 4]>,
+        palette: &[[u8; 4]],
     ) {
 
         let start_index = self.positions.len() as u32;
