@@ -44,7 +44,10 @@ fn setup(
         ..Default::default()
     });
 
-    let mesh = assets.load("../examples/chicken.vox");
+    let mesh = assets.load("chicken.vox");
+
+    // try modifying the chicken.vox model with magica voxel and watch the changes appear in real time
+    assets.watch_for_changes().unwrap();
 
     commands.spawn_bundle(MeshBundle {
         mesh: mesh,
