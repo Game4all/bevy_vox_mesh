@@ -7,12 +7,9 @@ use bevy::{
 };
 use building_blocks::{
     core::{Extent3i, PointN},
-    prelude::Array3x1,
-    storage::{Get, GetMut},
-};
-use building_blocks::{
     mesh::{greedy_quads, GreedyQuadsBuffer, IsOpaque, MergeVoxel},
-    storage::IsEmpty,
+    prelude::Array3x1,
+    storage::{Get, GetMut, IsEmpty},
 };
 
 use crate::mesh::VoxMesh;
@@ -53,7 +50,8 @@ pub(crate) fn mesh_model(model: &dot_vox::Model, palette: &[[u8; 4]]) -> Mesh {
             model.size.y as i32,
             model.size.z as i32,
         ]),
-    ).padded(1);
+    )
+    .padded(1);
 
     let mut voxels = Array3x1::fill(extent, Voxel::Empty);
 
