@@ -1,19 +1,27 @@
 
 <h1>
-<code>
-bevy_vox_mesh
-<a href="https://crates.io/crates/bevy_vox_mesh">
-<img src="https://img.shields.io/crates/v/bevy_vox_mesh?style=for-the-badge"/>
-</a>
-</code>
+<code>bevy_vox_mesh</code>
 </h1>
 
+<a href="https://crates.io/crates/bevy_vox_mesh">
+<img height="24" src="https://img.shields.io/crates/v/bevy_vox_mesh?style=for-the-badge"/>
+</a>
 
 A plugin for the bevy engine which allows loading magica voxel `.vox` files directly into usable meshes. 
 
+
+## Bevy compatibility
+
+| Bevy version | Plugin version |
+|--------------|----------------|
+| 0.5          | 0.1            |
+|              |                |
+
+
+## Usage
+
 ![demo screenshot](assets/screenshot.PNG)
 
-# Usage
 
 ```rust
 
@@ -59,9 +67,4 @@ fn setup(mut meshes: ResMut<Assets<Mesh>>,
 
 ```
 
-# Bevy compatibility
-
-| Bevy version | Plugin version |
-|--------------|----------------|
-| 0.5          | 0.1            |
-|              |                |
+Take a look in the `examples/` directory for a complete working example.
