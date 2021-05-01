@@ -17,6 +17,7 @@ impl VoxMesh {
         quad: &UnorientedQuad,
         palette_index: u32,
         palette: &[[u8; 4]],
+        flip_v: bool
     ) {
         let start_index = self.positions.len() as u32;
 
@@ -30,9 +31,8 @@ impl VoxMesh {
         self.colors
             .extend_from_slice(&[palette[palette_index as usize]; 4]);
 
-        //todo: make this configurable.
         self.uvs
-            .extend_from_slice(&face.simple_tex_coords(true, &quad));
+            .extend_from_slice(&face.simple_tex_coords(flip_v, &quad));
 
         self.indices
             .extend_from_slice(&face.quad_mesh_indices(start_index));

@@ -1,8 +1,11 @@
 use anyhow::{anyhow, Error};
 use bevy::asset::{AssetLoader, LoadContext, LoadedAsset};
 
+/// An asset loader which loads models in .vox files into usable [`bevy::render::mesh::Mesh`]es
 #[derive(Default)]
-pub struct VoxLoader;
+pub struct VoxLoader {
+    pub flip_uvs_vertically: bool,
+}
 
 use crate::mesher::mesh_model;
 
@@ -13,7 +16,7 @@ impl AssetLoader for VoxLoader {
         load_context: &'a mut LoadContext,
     ) -> bevy::utils::BoxedFuture<'a, Result<(), Error>> {
         Box::pin(async move {
-            load_magica_voxel_file(bytes, load_context)?;
+            self.load_magica_voxel_file(bytes, load_context)?;
             Ok(())
         })
     }
@@ -23,31 +26,35 @@ impl AssetLoader for VoxLoader {
     }
 }
 
-fn load_magica_voxel_file<'a>(
-    bytes: &'a [u8],
-    load_context: &'a mut LoadContext,
-) -> Result<(), Error> {
-    let file = match dot_vox::load_bytes(bytes) {
-        Ok(data) => data,
-        Err(error) => return Err(anyhow!(error)),
-    };
+impl VoxLoader {
+    fn load_magica_voxel_file<'a>(
+        &self,
+        bytes: &'a [u8],
+        load_context: &'a mut LoadContext,
+    ) -> Result<(), Error> {
+        let file = match dot_vox::load_bytes(bytes) {
+            Ok(data) => data,
+            Err(error) => return Err(anyhow!(error)),
+        };
 
-    let palette: Vec<[u8; 4]> = file
-        .palette
-        .iter()
-        .map(|color| color.to_le_bytes())
-        .collect();
+        let palette: Vec<[u8; 4]> = file
+            .palette
+            .iter()
+            .map(|color| color.to_le_bytes())
+            .collect();
 
-    for (index, model) in file.models.iter().enumerate() {
-        let mesh = mesh_model(model, &palette);
+        for (index, model) in file.models.iter().enumerate() {
+            let mesh = mesh_model(model, &palette, self.flip_uvs_vertically);
 
-        match index {
-            0 => load_context.set_default_asset(LoadedAsset::new(mesh)),
-            _ => {
-                load_context.set_labeled_asset(&format!("Model{}", index), LoadedAsset::new(mesh));
+            match index {
+                0 => load_context.set_default_asset(LoadedAsset::new(mesh)),
+                _ => {
+                    load_context
+                        .set_labeled_asset(&format!("Model{}", index), LoadedAsset::new(mesh));
+                }
             }
         }
-    }
 
-    Ok(())
+        Ok(())
+    }
 }

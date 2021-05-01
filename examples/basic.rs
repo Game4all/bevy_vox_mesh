@@ -14,7 +14,7 @@ mod shaders;
 fn main() {
     App::build()
         .add_plugins(DefaultPlugins)
-        .add_plugin(VoxMeshPlugin)
+        .add_plugin(VoxMeshPlugin::default())
         .add_startup_system(setup.system())
         .run();
 }

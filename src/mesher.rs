@@ -42,7 +42,7 @@ impl MergeVoxel for Voxel {
     }
 }
 
-pub(crate) fn mesh_model(model: &dot_vox::Model, palette: &[[u8; 4]]) -> Mesh {
+pub(crate) fn mesh_model(model: &dot_vox::Model, palette: &[[u8; 4]], flip_v: bool) -> Mesh {
     let extent = Extent3i::from_min_and_shape(
         PointN([0, 0, 0]),
         PointN([
@@ -71,7 +71,7 @@ pub(crate) fn mesh_model(model: &dot_vox::Model, palette: &[[u8; 4]]) -> Mesh {
                 Voxel::Full(x) => x as u32,
             };
 
-            mesh.add_quad(&group.face, quad, index, palette);
+            mesh.add_quad(&group.face, quad, index, palette, flip_v);
         }
     }
 
