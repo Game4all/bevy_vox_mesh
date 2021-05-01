@@ -79,6 +79,7 @@ pub(crate) fn mesh_model(model: &dot_vox::Model, palette: &[[u8; 4]]) -> Mesh {
         positions,
         normals,
         colors,
+        uvs,
         indices,
     } = mesh;
 
@@ -89,6 +90,7 @@ pub(crate) fn mesh_model(model: &dot_vox::Model, palette: &[[u8; 4]]) -> Mesh {
         Mesh::ATTRIBUTE_COLOR,
         VertexAttributeValues::Uchar4Norm(colors),
     );
+    mesh.set_attribute(Mesh::ATTRIBUTE_UV_0, uvs);
     mesh.set_indices(Some(Indices::U32(indices)));
 
     mesh
