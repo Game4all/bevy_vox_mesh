@@ -4,6 +4,8 @@ use bevy::asset::{AssetLoader, LoadContext, LoadedAsset};
 /// An asset loader which loads models in .vox files into usable [`bevy::render::mesh::Mesh`]es
 #[derive(Default)]
 pub struct VoxLoader {
+    /// Whether to flip the UVs vertically when meshing the models.
+    /// You may want to change this to false if you aren't using Vulkan as a graphical backend for bevy , else this should default to true.
     pub flip_uvs_vertically: bool,
 }
 
