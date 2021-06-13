@@ -1,6 +1,8 @@
 use anyhow::{anyhow, Error};
 use bevy::asset::{AssetLoader, LoadContext, LoadedAsset};
 
+use crate::mesher::mesh_model;
+
 /// An asset loader which loads models in .vox files into usable [`bevy::render::mesh::Mesh`]es
 #[derive(Default)]
 pub struct VoxLoader {
@@ -8,8 +10,6 @@ pub struct VoxLoader {
     /// You may want to change this to false if you aren't using Vulkan as a graphical backend for bevy , else this should default to true.
     pub flip_uvs_vertically: bool,
 }
-
-use crate::mesher::mesh_model;
 
 impl AssetLoader for VoxLoader {
     fn load<'a>(
@@ -48,12 +48,10 @@ impl VoxLoader {
         for (index, model) in file.models.iter().enumerate() {
             let mesh = mesh_model(model, &palette, self.flip_uvs_vertically);
 
-            match index {
-                0 => load_context.set_default_asset(LoadedAsset::new(mesh)),
-                _ => {
-                    load_context
-                        .set_labeled_asset(&format!("Model{}", index), LoadedAsset::new(mesh));
-                }
+            load_context
+                .set_labeled_asset(&format!("model{}", index), LoadedAsset::new(mesh.clone()));
+            if index == 0 {
+                load_context.set_default_asset(LoadedAsset::new(mesh.clone()));
             }
         }
 
