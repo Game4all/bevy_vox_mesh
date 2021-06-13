@@ -17,41 +17,51 @@
 //!        .add_startup_system(setup.system())
 //!        .run();
 //!}
-//! 
+//!
 //!fn setup(asset_loader: Res<AssetServer>) {
 //!   let mesh = asset_loader.load("my_voxel_model.vox");
 //!   // you can select what model to load from a file if it contains multiple models by adding `#Model<model number here>` to the asset path to load.
-//!   let second_mesh = asset_loader.load("my_voxel_model.vox#Model1"); 
+//!   let second_mesh = asset_loader.load("my_voxel_model.vox#model1");
 //!}
 //!```
-
 
 use bevy::prelude::*;
 
 mod loader;
+#[doc(inline)]
+use loader::VoxLoader;
+
 mod mesh;
 mod mesher;
 
-/// The core of this plugin.
-/// Allows loading .vox files as usable meshes.
+/// The core plugin adding functionality for loading `.vox` files.
+///
+/// Registers an [`bevy::asset::AssetLoader`] capable of loading modes in `.vox` files as usable [`bevy::render::mesh::Mesh`]
 pub struct VoxMeshPlugin {
-    /// Whether to flip the UVs vertically when meshing the models.
-    /// You may want to change this to `false` if you aren't using Vulkan as a graphical backend for bevy.
-    /// Defaults to `true`
-    pub flip_uvs_vertically: bool,
+    flip_uvs_vertically: bool,
+}
+
+impl VoxMeshPlugin {
+    /// Creates a [`VoxMeshPlugin`] instance with the specified parameters
+    ///
+    /// # Arguments
+    /// * `flip_uvs_vertically` - Sets whether the mesh UVs should be flipped vertically when loading voxel models.
+    pub fn with_options(flip_uvs_vertically: bool) -> Self {
+        Self {
+            flip_uvs_vertically,
+        }
+    }
 }
 
 impl Default for VoxMeshPlugin {
     fn default() -> Self {
-        Self {
-            flip_uvs_vertically: true, //UVs should be flipped vertically by default as the main backend of WGPU is Vulkan
-        }
+        Self::with_options(true) //UVs should be flipped vertically by default as the main backend of WGPU is Vulkan
     }
 }
 
 impl Plugin for VoxMeshPlugin {
     fn build(&self, app: &mut AppBuilder) {
-        app.add_asset_loader(loader::VoxLoader {
+        app.add_asset_loader(VoxLoader {
             flip_uvs_vertically: self.flip_uvs_vertically,
         });
     }
