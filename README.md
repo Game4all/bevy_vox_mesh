@@ -70,3 +70,7 @@ fn setup(mut meshes: ResMut<Assets<Mesh>>,
 ```
 
 Take a look in the `examples/` directory for a complete working example.
+
+## Acknowledgements
+
+This asset loader is powered by the awesome [`building-blocks`](https://github.com/bonsairobo/building-blocks) crate.
