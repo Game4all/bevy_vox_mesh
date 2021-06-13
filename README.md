@@ -9,6 +9,8 @@
 
 A plugin for the bevy engine which allows loading magica voxel `.vox` files directly into usable meshes. 
 
+> **NOTE**: You may need to use in conjunction with this plugin a render pipeline which support per-vertex colouring in order for loaded models to display coloured. 
+
 
 ## Bevy compatibility
 
