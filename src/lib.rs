@@ -36,7 +36,7 @@ mod mesher;
 
 /// The core plugin adding functionality for loading `.vox` files.
 ///
-/// Registers an [`bevy::asset::AssetLoader`] capable of loading modes in `.vox` files as usable [`bevy::render::mesh::Mesh`]
+/// Registers an [`bevy::asset::AssetLoader`] capable of loading modes in `.vox` files as usable [`bevy::render::mesh::Mesh`].
 pub struct VoxMeshPlugin {
     flip_uvs_vertically: bool,
 }
