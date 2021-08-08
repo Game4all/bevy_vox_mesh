@@ -13,7 +13,7 @@ exclude = ["assets/*"]
 [dependencies]
 bevy = { version = "0.5.0", default-features = false, features = ["render"] }
 dot_vox = "4.1.0"
-building-blocks = { version = "0.6.0", default-features = false, features = ["mesh"] }
+building-blocks = { version = "0.7.0", default-features = false, features = ["mesh"] }
 anyhow = "1.0.38"
 
 [dev-dependencies]
