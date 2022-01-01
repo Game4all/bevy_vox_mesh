@@ -25,44 +25,51 @@
 //!}
 //!```
 
-use bevy::prelude::*;
+use bevy::{
+    app::{App, Plugin},
+    prelude::AddAsset,
+};
+use block_mesh::{QuadCoordinateConfig, RIGHT_HANDED_Y_UP_CONFIG};
 
 mod loader;
 #[doc(inline)]
 use loader::VoxLoader;
 
 mod mesh;
-mod mesher;
+mod voxel;
 
 /// The core plugin adding functionality for loading `.vox` files.
 ///
 /// Registers an [`bevy::asset::AssetLoader`] capable of loading modes in `.vox` files as usable [`bevy::render::mesh::Mesh`].
 pub struct VoxMeshPlugin {
-    flip_uvs_vertically: bool,
+    config: QuadCoordinateConfig,
+    v_flip_faces: bool,
 }
 
 impl VoxMeshPlugin {
     /// Creates a [`VoxMeshPlugin`] instance with the specified parameters
     ///
     /// # Arguments
-    /// * `flip_uvs_vertically` - Sets whether the mesh UVs should be flipped vertically when loading voxel models.
-    pub fn with_options(flip_uvs_vertically: bool) -> Self {
+    /// * `config` - The quad coordinates configuration ([`QuadCoordinateConfig`]) to use when meshing models.
+    pub fn with_options(config: QuadCoordinateConfig, v_flip_faces: bool) -> Self {
         Self {
-            flip_uvs_vertically,
+            config,
+            v_flip_faces,
         }
     }
 }
 
 impl Default for VoxMeshPlugin {
     fn default() -> Self {
-        Self::with_options(true) //UVs should be flipped vertically by default as the main backend of WGPU is Vulkan
+        Self::with_options(RIGHT_HANDED_Y_UP_CONFIG, true)
     }
 }
 
 impl Plugin for VoxMeshPlugin {
-    fn build(&self, app: &mut AppBuilder) {
+    fn build(&self, app: &mut App) {
         app.add_asset_loader(VoxLoader {
-            flip_uvs_vertically: self.flip_uvs_vertically,
+            config: self.config.clone(),
+            v_flip_face: self.v_flip_faces,
         });
     }
 }

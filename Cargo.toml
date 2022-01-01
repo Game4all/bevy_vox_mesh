@@ -5,19 +5,21 @@ license = "MIT"
 version = "0.3.0"
 repository = "https://github.com/Game4all/bevy_vox_mesh"
 authors = ["Lucas A. <game4allyt@gmail.com>"]
-edition = "2018"
+edition = "2021"
 exclude = ["assets/*"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-bevy = { version = "0.5.0", default-features = false, features = ["render"] }
+bevy = { git = "https://github.com/bevyengine/bevy", branch = "main" }
 dot_vox = "4.1.0"
-building-blocks = { version = "0.7.0", default-features = false, features = ["mesh"] }
+ndshape = "0.2.0"
+block-mesh = { git = "https://github.com/bonsairobo/block-mesh-rs" }
+ndcopy = "0.2.0"
 anyhow = "1.0.38"
 
 [dev-dependencies]
-bevy = "0.5.0"
+bevy = { git = "https://github.com/bevyengine/bevy", branch = "main" }
 
 [[example]]
 name = "basic"
