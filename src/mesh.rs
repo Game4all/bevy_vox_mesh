@@ -62,10 +62,13 @@ pub(crate) fn mesh_model(
         VertexAttributeValues::Float32x3(normals),
     );
     render_mesh.set_attribute(Mesh::ATTRIBUTE_UV_0, VertexAttributeValues::Float32x2(uvs));
-    render_mesh.set_attribute(
-        Mesh::ATTRIBUTE_COLOR,
-        VertexAttributeValues::Unorm8x4(colors),
-    );
+
+    //todo: finish porting color rendering to latest bevy version.
+
+    // render_mesh.set_attribute(
+    //     Mesh::ATTRIBUTE_COLOR,
+    //     VertexAttributeValues::Unorm8x4(colors),
+    // );
 
     render_mesh.set_indices(Some(Indices::U32(indices.clone())));
 
