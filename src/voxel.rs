@@ -9,12 +9,11 @@ pub(crate) struct Voxel(pub(crate) u8);
 pub(crate) const EMPTY_VOXEL: Voxel = Voxel(255);
 
 impl BlockyVoxel for Voxel {
-    fn is_empty(&self) -> bool {
-        self.0 == EMPTY_VOXEL.0
-    }
-
-    fn is_opaque(&self) -> bool {
-        self.0 != EMPTY_VOXEL.0
+    fn get_visibility(&self) -> block_mesh::VoxelVisibility {
+        match self.0 {
+            255 => block_mesh::VoxelVisibility::Empty,
+            _ => block_mesh::VoxelVisibility::Opaque,
+        }
     }
 }
 
