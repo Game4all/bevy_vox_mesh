@@ -73,4 +73,4 @@ Take a look in the `examples/` directory for a complete working example.
 
 ## Acknowledgements
 
-This asset loader is powered by the awesome [`building-blocks`](https://github.com/bonsairobo/building-blocks) crate.
+This asset loader is powered by the awesome [`block-mesh-rss`](https://github.com/bonsairobo/block-mesh-rs) crate.
