@@ -2,8 +2,6 @@ use bevy::prelude::*;
 use bevy_vox_mesh::VoxMeshPlugin;
 use std::f32::consts::PI;
 
-mod pipeline;
-
 fn main() {
     App::default()
         .add_plugins(DefaultPlugins)
@@ -18,7 +16,7 @@ fn setup(
     mut stdmats: ResMut<Assets<StandardMaterial>>,
     assets: Res<AssetServer>,
 ) {
-    commands.spawn_bundle(PerspectiveCameraBundle {
+    commands.spawn_bundle(Camera3dBundle {
         transform: Transform::from_xyz(-2.0, 2.5, 5.0).looking_at(Vec3::ZERO, Vec3::Y),
         ..Default::default()
     });
@@ -38,7 +36,7 @@ fn setup(
         transform: Transform::from_scale((0.01, 0.01, 0.01).into())
             * Transform::from_rotation(Quat::from_axis_angle(Vec3::Y, PI)),
         mesh: assets.load("chicken.vox"),
-        material: stdmats.add(StandardMaterial::default()),
+        material: stdmats.add(Color::rgb(1., 1., 1.).into()),
         ..Default::default()
     });
 }

@@ -1,6 +1,7 @@
 use block_mesh::{MergeVoxel, Voxel as BlockyVoxel};
 use dot_vox::Model;
-use ndshape::{Shape, Shape3u32};
+use ndshape::RuntimeShape;
+use ndshape::Shape;
 
 // trait implementation rules requires the use of a newtype to allow meshing.
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -25,8 +26,9 @@ impl MergeVoxel for Voxel {
     }
 }
 
-pub(crate) fn load_from_model(model: &Model) -> (Shape3u32, Vec<Voxel>) {
-    let model_shape = Shape3u32::new([model.size.x + 2, model.size.z + 2, model.size.y + 2]);
+pub(crate) fn load_from_model(model: &Model) -> (RuntimeShape<u32, 3>, Vec<Voxel>) {
+    let model_shape =
+        RuntimeShape::<u32, 3>::new([model.size.x + 2, model.size.z + 2, model.size.y + 2]);
     let mut data = vec![EMPTY_VOXEL; model_shape.size() as usize];
 
     model.voxels.iter().for_each(|voxel| {

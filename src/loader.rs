@@ -10,7 +10,7 @@ pub struct VoxLoader {
     /// Whether to flip the UVs vertically when meshing the models.
     /// You may want to change this to false if you aren't using Vulkan as a graphical backend for bevy , else this should default to true.
     pub(crate) config: QuadCoordinateConfig,
-    pub(crate) v_flip_face: bool
+    pub(crate) v_flip_face: bool,
 }
 
 impl AssetLoader for VoxLoader {
@@ -41,15 +41,16 @@ impl VoxLoader {
             Err(error) => return Err(anyhow!(error)),
         };
 
-        let palette: Vec<[u8; 4]> = file
+        let palette: Vec<[f32; 4]> = file
             .palette
             .iter()
-            .map(|color| color.to_le_bytes())
+            .map(|color| color.to_le_bytes().map(|byte| byte as f32 / u8::MAX as f32))
             .collect();
 
         for (index, model) in file.models.iter().enumerate() {
             let (shape, buffer) = crate::voxel::load_from_model(model);
-            let mesh = crate::mesh::mesh_model(shape, &buffer, &palette, &self.config, self.v_flip_face);
+            let mesh =
+                crate::mesh::mesh_model(shape, &buffer, &palette, &self.config, self.v_flip_face);
 
             match index {
                 0 => {

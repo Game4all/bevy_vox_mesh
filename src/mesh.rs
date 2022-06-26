@@ -3,14 +3,14 @@ use bevy::render::{
     render_resource::PrimitiveTopology,
 };
 use block_mesh::{greedy_quads, GreedyQuadsBuffer, QuadCoordinateConfig};
-use ndshape::{Shape, Shape3u32};
+use ndshape::{RuntimeShape, Shape};
 
 use crate::voxel::Voxel;
 
 pub(crate) fn mesh_model(
-    buffer_shape: Shape3u32,
+    buffer_shape: RuntimeShape<u32, 3>,
     buffer: &[Voxel],
-    palette: &[[u8; 4]],
+    palette: &[[f32; 4]],
     quads_config: &QuadCoordinateConfig,
     v_flip_face: bool,
 ) -> Mesh {
@@ -52,23 +52,21 @@ pub(crate) fn mesh_model(
         }
     }
 
-    render_mesh.set_attribute(
+    render_mesh.insert_attribute(
         Mesh::ATTRIBUTE_POSITION,
         VertexAttributeValues::Float32x3(positions),
     );
 
-    render_mesh.set_attribute(
+    render_mesh.insert_attribute(
         Mesh::ATTRIBUTE_NORMAL,
         VertexAttributeValues::Float32x3(normals),
     );
-    render_mesh.set_attribute(Mesh::ATTRIBUTE_UV_0, VertexAttributeValues::Float32x2(uvs));
+    render_mesh.insert_attribute(Mesh::ATTRIBUTE_UV_0, VertexAttributeValues::Float32x2(uvs));
 
-    //todo: finish porting color rendering to latest bevy version.
-
-    // render_mesh.set_attribute(
-    //     Mesh::ATTRIBUTE_COLOR,
-    //     VertexAttributeValues::Unorm8x4(colors),
-    // );
+    render_mesh.insert_attribute(
+        Mesh::ATTRIBUTE_COLOR,
+        VertexAttributeValues::Float32x4(colors),
+    );
 
     render_mesh.set_indices(Some(Indices::U32(indices.clone())));
 
