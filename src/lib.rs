@@ -1,13 +1,7 @@
 //! A plugin for the bevy engine which allows loading .vox files as usable meshes.
 //!
 //! ```
-//!use bevy::{
-//!   prelude::*,
-//!    render::{
-//!        pipeline::{PipelineDescriptor, RenderPipeline},
-//!        shader::{ShaderStage, ShaderStages},
-//!    },
-//!};
+//!use bevy::prelude::*;
 //!use bevy_vox_mesh::VoxMeshPlugin;
 //!
 //!fn main() {

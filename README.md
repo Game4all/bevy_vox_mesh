@@ -7,17 +7,15 @@
 <img height="24" src="https://img.shields.io/crates/v/bevy_vox_mesh?style=for-the-badge"/>
 </a>
 
-A plugin for the bevy engine which allows loading magica voxel `.vox` files directly into usable meshes. 
-
-> **NOTE**: You may need to use in conjunction with this plugin a render pipeline which support per-vertex colouring in order for loaded models to display coloured. 
+A plugin for the bevy engine which allows loading magica voxel `.vox` files directly into usable meshes. This uses mesh vertex coloring.
 
 
 ## Bevy compatibility
 
 | Bevy version | Plugin version |
-|--------------|----------------|
+| ------------ | -------------- |
 | 0.5          | 0.1, 0.2       |
-|              |                |
+| 0.8          | 0.4            |
 
 
 ## Usage
@@ -27,44 +25,38 @@ A plugin for the bevy engine which allows loading magica voxel `.vox` files dire
 
 ```rust
 
-use bevy::{
-    prelude::*,
-    render::{
-        pipeline::{PipelineDescriptor, RenderPipeline},
-        shader::{ShaderStage, ShaderStages},
-    },
-};
+use bevy::prelude::*;
 use bevy_vox_mesh::VoxMeshPlugin;
+use std::f32::consts::PI;
 
 fn main() {
-    App::build()
+    App::default()
         .add_plugins(DefaultPlugins)
         .add_plugin(VoxMeshPlugin::default())
-        .add_startup_system(setup.system())
+        .add_startup_system(setup)
         .run();
 }
 
-fn setup(mut meshes: ResMut<Assets<Mesh>>,
-         mut commands: Commands,
-         assets: ResMut<AssetServer>
+fn setup(
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut stdmats: ResMut<Assets<StandardMaterial>>,
+    assets: Res<AssetServer>,
 ) {
-
-    // After having created and registered a render pipeline which supports vertex coloring.
-
-    //spawn a mesh bundle to render our loaded voxel mesh
-    commands.spawn_bundle(MeshBundle {
-        mesh: assets.load("my_voxel_model.vox"),
-        render_pipelines: RenderPipelines::from_pipelines(vec![RenderPipeline::new(HANDLE_TO_PIPELINE_WITH_VERTEX_COLORING)]),
-        transform: Transform::from_scale((0.01, 0.01, 0.01).into())
-            * Transform::from_rotation(Quat::from_axis_angle(Vec3::Y, PI)),
-        ..Default::default()
-    });
-
-    commands.spawn_bundle(PerspectiveCameraBundle {
+    commands.spawn_bundle(Camera3dBundle {
         transform: Transform::from_xyz(-2.0, 2.5, 5.0).looking_at(Vec3::ZERO, Vec3::Y),
         ..Default::default()
     });
+
+    commands.spawn_bundle(PbrBundle {
+        transform: Transform::from_scale((0.01, 0.01, 0.01).into())
+            * Transform::from_rotation(Quat::from_axis_angle(Vec3::Y, PI)),
+        mesh: assets.load("chicken.vox"),
+        material: stdmats.add(Color::rgb(1., 1., 1.).into()),
+        ..Default::default()
+    });
 }
+
 
 
 ```
@@ -73,4 +65,4 @@ Take a look in the `examples/` directory for a complete working example.
 
 ## Acknowledgements
 
-This asset loader is powered by the awesome [`block-mesh-rss`](https://github.com/bonsairobo/block-mesh-rs) crate.
+This asset loader is powered by the awesome [`block-mesh-rs`](https://github.com/bonsairobo/block-mesh-rs) crate.
