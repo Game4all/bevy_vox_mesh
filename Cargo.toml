@@ -20,4 +20,4 @@ anyhow = "1.0.38"
 
 [[example]]
 name = "basic"
-path = "examples/main.rs"
+path = "examples/basic.rs"
