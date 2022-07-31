@@ -20,8 +20,7 @@ A plugin for the bevy engine which allows loading magica voxel `.vox` files dire
 
 ## Usage
 
-![demo screenshot](assets/screenshot.PNG)
-
+![demo screenshot](https://raw.githubusercontent.com/Game4all/bevy_vox_mesh/master/assets/screenshot.PNG)
 
 ```rust
 
