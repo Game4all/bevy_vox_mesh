@@ -11,12 +11,15 @@ exclude = ["assets/*"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-bevy = "0.8"
+bevy = { version = "0.8.0", default-features = false, features = ["render", "bevy_asset"] }
 dot_vox = "4.1.0"
 ndshape = "0.3.0"
 block-mesh = "0.2.0"
 ndcopy = "0.3.0"
 anyhow = "1.0.38"
+
+[dev-dependencies]
+bevy = { version = "0.8.0", default-features = false, features = ["bevy_winit"] }
 
 [[example]]
 name = "basic"
