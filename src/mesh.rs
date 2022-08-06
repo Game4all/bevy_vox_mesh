@@ -46,7 +46,11 @@ pub(crate) fn mesh_model(
             let palette_index = buffer[buffer_shape.linearize(quad.minimum) as usize].0;
             colors.extend_from_slice(&[palette[palette_index as usize]; 4]);
             indices.extend_from_slice(&face.quad_mesh_indices(positions.len() as u32));
-            positions.extend_from_slice(&face.quad_mesh_positions(quad, 1.0));
+            positions.extend_from_slice(
+                &face
+                    .quad_mesh_positions(quad, 1.0)
+                    .map(|position| position.map(|x| x - 1.0)), // corrects the 1 offset introduced by the meshing.
+            );
             uvs.extend_from_slice(&face.tex_coords(quads_config.u_flip_face, v_flip_face, quad));
             normals.extend_from_slice(&face.quad_mesh_normals());
         }
