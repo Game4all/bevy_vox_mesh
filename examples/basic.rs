@@ -32,7 +32,7 @@ fn setup(
     });
 
     commands.spawn(PbrBundle {
-        mesh: meshes.add(Mesh::from(shape::Plane { size: 5.0 })),
+        mesh: meshes.add(Mesh::from(shape::Plane { subdivisions: 2,  size: 5.0 })),
         material: stdmats.add(Color::rgb(0.3, 0.5, 0.3).into()),
         ..Default::default()
     });
