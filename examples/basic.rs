@@ -5,8 +5,8 @@ use std::f32::consts::PI;
 fn main() {
     App::default()
         .add_plugins(DefaultPlugins)
-        .add_plugin(VoxMeshPlugin::default())
-        .add_startup_system(setup)
+        .add_plugins(VoxMeshPlugin::default())
+        .add_systems(Startup, setup)
         .run();
 }
 
