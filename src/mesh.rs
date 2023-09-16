@@ -24,6 +24,7 @@ pub(crate) fn mesh_model(
         &quads_config.faces,
         &mut greedy_quads_buffer,
     );
+    let [x, y, z] = buffer_shape.as_array();
 
     let num_indices = greedy_quads_buffer.quads.num_quads() * 6;
     let num_vertices = greedy_quads_buffer.quads.num_quads() * 4;
@@ -47,9 +48,13 @@ pub(crate) fn mesh_model(
             colors.extend_from_slice(&[palette[palette_index as usize]; 4]);
             indices.extend_from_slice(&face.quad_mesh_indices(positions.len() as u32));
             positions.extend_from_slice(
-                &face
-                    .quad_mesh_positions(quad, 1.0)
-                    .map(|position| position.map(|x| x - 1.0)), // corrects the 1 offset introduced by the meshing.
+                &face.quad_mesh_positions(quad, 1.0).map(|position| {
+                    [
+                        position[0] + x as f32 / 2.0,
+                        position[1] + y as f32 / 2.0,
+                        position[2] + z as f32 / 2.0,
+                    ]
+                }), // corrects the 1 offset introduced by the meshing.
             );
             uvs.extend_from_slice(&face.tex_coords(quads_config.u_flip_face, v_flip_face, quad));
             normals.extend_from_slice(&face.quad_mesh_normals());

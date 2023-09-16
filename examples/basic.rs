@@ -40,7 +40,7 @@ fn setup(
     commands.spawn(PbrBundle {
         transform: Transform::from_scale((0.01, 0.01, 0.01).into())
             * Transform::from_rotation(Quat::from_axis_angle(Vec3::Y, PI)),
-        mesh: assets.load("chicken.vox"),
+        mesh: assets.load("工作台.vox"),
         material: stdmats.add(Color::rgb(1., 1., 1.).into()),
         ..Default::default()
     });
