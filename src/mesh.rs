@@ -50,9 +50,9 @@ pub(crate) fn mesh_model(
             positions.extend_from_slice(
                 &face.quad_mesh_positions(quad, 1.0).map(|position| {
                     [
-                        position[0] - 1. + (x as f32 - 2.0) / 2.0,
-                        position[1] - 1. + (y as f32 - 2.0) / 2.0,
-                        position[2] - 1. + (z as f32 - 2.0) / 2.0,
+                        position[0] + (x as f32 - 2.0) / 2.0,
+                        position[1] + (y as f32 - 2.0) / 2.0,
+                        position[2] + (z as f32 - 2.0) / 2.0,
                     ]
                 }), // corrects the 1 offset introduced by the meshing.
             );
