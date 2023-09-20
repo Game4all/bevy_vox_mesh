@@ -28,7 +28,9 @@ use block_mesh::{QuadCoordinateConfig, RIGHT_HANDED_Y_UP_CONFIG};
 mod loader;
 #[doc(inline)]
 use loader::VoxLoader;
+use mate_data::VoxMateData;
 
+pub mod mate_data;
 mod mesh;
 mod voxel;
 
@@ -61,6 +63,7 @@ impl Default for VoxMeshPlugin {
 
 impl Plugin for VoxMeshPlugin {
     fn build(&self, app: &mut App) {
+        app.add_asset::<VoxMateData>();
         app.add_asset_loader(VoxLoader {
             config: self.config.clone(),
             v_flip_face: self.v_flip_faces,
