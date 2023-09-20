@@ -4,6 +4,7 @@ use bevy::{
         GlobalTransform, Handle, Mesh, Name, PbrBundle, StandardMaterial, Transform, Visibility,
     },
     reflect::{TypePath, TypeUuid},
+    utils::HashMap,
 };
 use dot_vox::{Layer, SceneNode};
 
@@ -13,12 +14,38 @@ use dot_vox::{Layer, SceneNode};
 pub struct VoxMateData {
     pub scenes: Vec<SceneNode>,
     pub layers: Vec<Layer>,
+    // layers hidden status
+    pub layer_map: HashMap<u32, bool>,
 }
 
 #[derive(Debug, Clone, Component)]
 pub struct LayerData(pub u32);
 
 impl VoxMateData {
+    pub fn new(scenes: Vec<SceneNode>, layers: Vec<Layer>) -> Self {
+        Self {
+            scenes: scenes,
+            layers: layers.clone(),
+            layer_map: layers
+                .clone()
+                .into_iter()
+                .map(|x| {
+                    let mut number: u32 = u32::MAX;
+                    if let Some(s) = x.attributes.get("_name") {
+                        number = s.parse().unwrap();
+                    }
+                    let mut hidden = false;
+                    if let Some(s) = x.attributes.get("_hidden") {
+                        if s == "1" {
+                            hidden = true;
+                        }
+                    }
+                    (number, hidden)
+                })
+                .collect(),
+        }
+    }
+
     pub fn all_loaded(
         &self,
         base_id: &'static str,
@@ -67,6 +94,7 @@ impl VoxMateData {
             &self.scenes,
             material_handle.clone(),
             mesh_assets,
+            &self.layer_map,
         );
         ret[0]
     }
@@ -80,6 +108,7 @@ fn deal_scene_node(
     scenes_tree: &Vec<SceneNode>,
     material_handle: Handle<StandardMaterial>,
     mesh_assets: &mut Assets<Mesh>,
+    layer_map: &HashMap<u32, bool>,
 ) -> Vec<Entity> {
     let mut result: Vec<Entity> = Vec::new();
     match scene_node {
@@ -113,10 +142,21 @@ fn deal_scene_node(
                 scenes_tree,
                 material_handle.clone(),
                 mesh_assets,
+                layer_map,
             );
             node.push_children(&children);
+
+            let visibilty = if let Some(hidden) = layer_map.get(layer_id) {
+                if *hidden {
+                    Visibility::Hidden
+                } else {
+                    Visibility::Inherited
+                }
+            } else {
+                Visibility::Inherited
+            };
             node.insert((
-                Visibility::Inherited,
+                visibilty,
                 ComputedVisibility::HIDDEN,
                 GlobalTransform::IDENTITY,
             ));
@@ -136,6 +176,7 @@ fn deal_scene_node(
                     scenes_tree,
                     material_handle.clone(),
                     mesh_assets,
+                    layer_map,
                 );
                 result.extend(children);
             }

@@ -16,8 +16,9 @@ fn main() {
             mate: None,
         })
         .insert_resource(BoyEntity { boy_entity: None })
+        .insert_resource(FaceNow::default())
         .add_systems(Startup, setup)
-        .add_systems(Update, (load_mate, load_boy))
+        .add_systems(Update, (load_mate, load_boy, toggle_faces))
         .run();
 }
 
@@ -30,6 +31,45 @@ pub struct BoyEntity {
 pub struct BoyMate {
     pub handle: Option<Handle<VoxMateData>>,
     pub mate: Option<VoxMateData>,
+}
+
+#[derive(Debug, Resource, Clone)]
+pub struct FaceNow {
+    pub now_face: &'static str,
+}
+
+impl Default for FaceNow {
+    fn default() -> Self {
+        Self { now_face: "face0" }
+    }
+}
+
+fn toggle_faces(
+    keyboard_input: Res<Input<KeyCode>>,
+    mut query: Query<(Entity, &Name, &mut Visibility)>,
+    mut face_now: ResMut<FaceNow>,
+) {
+    let faces = vec!["face0", "face1", "face2", "face3"];
+    if keyboard_input.just_pressed(KeyCode::Tab) {
+        if let Some(index) = faces.iter().position(|&x| x == face_now.now_face) {
+            let next_index = if index == faces.len() - 1 {
+                0
+            } else {
+                index + 1
+            };
+            let next_face = faces[next_index];
+            for (_, name, mut visibility) in query.iter_mut() {
+                if faces.contains(&name.as_str()) {
+                    if name.as_str() == next_face {
+                        *visibility.as_mut() = Visibility::Inherited;
+                    } else {
+                        *visibility.as_mut() = Visibility::Hidden;
+                    }
+                }
+            }
+            face_now.now_face = next_face;
+        }
+    }
 }
 
 fn load_boy(
@@ -60,13 +100,13 @@ fn load_boy(
                     Transform {
                         translation: Vec3 {
                             x: 0.0,
-                            y: 0.4, // height is 80 so the button is scale*80/2
+                            y: 1.0 / 40. * 40., // height is 80 so the button is scale*80/2
                             z: 0.0,
                         },
                         scale: Vec3 {
-                            x: 0.01,
-                            y: 0.01,
-                            z: 0.01,
+                            x: 1.0 / 40.,
+                            y: 1.0 / 40.,
+                            z: 1.0 / 40.,
                         },
                         ..Default::default()
                     } * Transform::from_rotation(Quat::from_axis_angle(Vec3::Y, PI)),

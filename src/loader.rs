@@ -70,10 +70,7 @@ impl VoxLoader {
         }
         load_context.set_labeled_asset(
             &format!("mate_data"),
-            LoadedAsset::new(VoxMateData {
-                scenes: file.scenes,
-                layers: file.layers,
-            }),
+            LoadedAsset::new(VoxMateData::new(file.scenes, file.layers)),
         );
 
         Ok(())
