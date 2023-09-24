@@ -137,7 +137,7 @@ fn setup(
     mut boy_mate: ResMut<BoyMate>,
     assets: Res<AssetServer>,
 ) {
-    let mate_data_handle: Handle<VoxSceneInfo> = assets.load("boy.vox#mate_data");
+    let mate_data_handle: Handle<VoxSceneInfo> = assets.load("boy.vox#scene");
     boy_mate.handle = Some(mate_data_handle);
 
     commands.spawn(Camera3dBundle {

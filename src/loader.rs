@@ -70,7 +70,7 @@ impl VoxLoader {
             }
         }
         load_context.set_labeled_asset(
-            &format!("mate_data"),
+            &format!("scene"),
             LoadedAsset::new(VoxSceneInfo::new(file.scenes, file.layers)),
         );
 
