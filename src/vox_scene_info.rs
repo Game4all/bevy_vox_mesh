@@ -11,7 +11,7 @@ use dot_vox::{Layer, SceneNode};
 #[derive(Debug, TypeUuid, TypePath, Clone)]
 #[uuid = "39cadc56-aa9c-4543-8640-a018b74b5052"]
 
-pub struct VoxMateData {
+pub struct VoxSceneInfo {
     pub scenes: Vec<SceneNode>,
     pub layers: Vec<Layer>,
     // layers hidden status
@@ -21,7 +21,7 @@ pub struct VoxMateData {
 #[derive(Debug, Clone, Component)]
 pub struct LayerData(pub u32);
 
-impl VoxMateData {
+impl VoxSceneInfo {
     pub fn new(scenes: Vec<SceneNode>, layers: Vec<Layer>) -> Self {
         Self {
             scenes: scenes,

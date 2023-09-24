@@ -2,7 +2,8 @@ use anyhow::{anyhow, Error};
 use bevy::asset::{AssetLoader, LoadContext, LoadedAsset};
 use block_mesh::QuadCoordinateConfig;
 
-use crate::mate_data::VoxMateData;
+use crate::vox_scene_info::VoxSceneInfo;
+
 
 /// An asset loader capable of loading models in `.vox` files as usable [`bevy::render::mesh::Mesh`]es.
 ///
@@ -70,7 +71,7 @@ impl VoxLoader {
         }
         load_context.set_labeled_asset(
             &format!("mate_data"),
-            LoadedAsset::new(VoxMateData::new(file.scenes, file.layers)),
+            LoadedAsset::new(VoxSceneInfo::new(file.scenes, file.layers)),
         );
 
         Ok(())

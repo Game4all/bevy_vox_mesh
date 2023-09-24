@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use bevy_egui::EguiPlugin;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
-use bevy_vox_mesh::{mate_data::VoxMateData, VoxMeshPlugin};
+use bevy_vox_mesh::{vox_scene_info::VoxSceneInfo, VoxMeshPlugin};
 use std::f32::consts::PI;
 
 fn main() {
@@ -29,8 +29,8 @@ pub struct BoyEntity {
 
 #[derive(Debug, Resource, Clone)]
 pub struct BoyMate {
-    pub handle: Option<Handle<VoxMateData>>,
-    pub mate: Option<VoxMateData>,
+    pub handle: Option<Handle<VoxSceneInfo>>,
+    pub mate: Option<VoxSceneInfo>,
 }
 
 #[derive(Debug, Resource, Clone)]
@@ -117,7 +117,7 @@ fn load_boy(
     }
 }
 
-fn load_mate(mate_assets: Res<Assets<VoxMateData>>, mut boy_mate: ResMut<BoyMate>) {
+fn load_mate(mate_assets: Res<Assets<VoxSceneInfo>>, mut boy_mate: ResMut<BoyMate>) {
     if let Some(handle) = boy_mate.handle.clone() {
         match boy_mate.mate {
             Some(_) => {}
@@ -137,7 +137,7 @@ fn setup(
     mut boy_mate: ResMut<BoyMate>,
     assets: Res<AssetServer>,
 ) {
-    let mate_data_handle: Handle<VoxMateData> = assets.load("boy.vox#mate_data");
+    let mate_data_handle: Handle<VoxSceneInfo> = assets.load("boy.vox#mate_data");
     boy_mate.handle = Some(mate_data_handle);
 
     commands.spawn(Camera3dBundle {
