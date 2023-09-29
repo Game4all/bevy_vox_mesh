@@ -30,16 +30,16 @@ impl VoxSceneInfo {
                 .clone()
                 .into_iter()
                 .map(|x| {
-                    let mut number: u32 = u32::MAX;
-                    if let Some(s) = x.attributes.get("_name") {
-                        number = s.parse().unwrap();
-                    }
-                    let mut hidden = false;
-                    if let Some(s) = x.attributes.get("_hidden") {
-                        if s == "1" {
-                            hidden = true;
-                        }
-                    }
+                    let number = x
+                        .attributes
+                        .get("_name")
+                        .map(|s| s.parse().unwrap())
+                        .unwrap_or(u32::MAX);
+                    let hidden = x
+                        .attributes
+                        .get("_hidden")
+                        .map(|s| s == "1")
+                        .unwrap_or(false);
                     (number, hidden)
                 })
                 .collect(),
