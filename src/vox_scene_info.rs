@@ -46,7 +46,7 @@ impl VoxSceneInfo {
         }
     }
 
-    pub fn all_loaded(
+    pub fn assert_all_loaded(
         &self,
         base_id: &'static str,
         mesh_assets: &Assets<Mesh>,
