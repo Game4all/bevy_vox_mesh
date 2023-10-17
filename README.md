@@ -65,3 +65,9 @@ Take a look in the `examples/` directory for a complete working example.
 ## Acknowledgements
 
 This asset loader is powered by the awesome [`block-mesh-rs`](https://github.com/bonsairobo/block-mesh-rs) crate.
+
+
+# ChangeLog
+- Add more information read from vox. such as relationship between vox models in scene. see `examples/boy.rs`
+- in example boy use Tab can toggle the faces.
+- boy.vox copy from [teravit](https://teravit.app/en/contents/index.html?category=content-en&id=5854&platform=null%23#)
