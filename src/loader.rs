@@ -1,6 +1,6 @@
 use anyhow::{anyhow, Context};
 use bevy::{
-    asset::{io::Reader, AssetLoader, AsyncReadExt, LoadContext, LoadedAsset},
+    asset::{io::Reader, AssetLoader, AsyncReadExt, LoadContext},
     render::mesh::Mesh,
     utils::BoxedFuture,
 };
