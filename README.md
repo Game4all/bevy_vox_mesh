@@ -66,3 +66,5 @@ Take a look in the `examples/` directory for a complete working example.
 ## Acknowledgements
 
 This asset loader is powered by the awesome [`block-mesh-rs`](https://github.com/bonsairobo/block-mesh-rs) crate.
+
+Ported to bevy 0.12.0 thanks to @baranyildirim.
