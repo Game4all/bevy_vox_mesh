@@ -17,6 +17,7 @@ A plugin for the bevy engine which allows loading magica voxel `.vox` files dire
 | 0.9          | 0.5            |
 | 0.10         | 0.6            |
 | 0.11         | 0.7, 0.7.1     |
+| 0.12         | 0.8            |
 
 ## Usage
 
@@ -65,3 +66,5 @@ Take a look in the `examples/` directory for a complete working example.
 ## Acknowledgements
 
 This asset loader is powered by the awesome [`block-mesh-rs`](https://github.com/bonsairobo/block-mesh-rs) crate.
+
+Ported to bevy 0.12.0 thanks to @baranyildirim.

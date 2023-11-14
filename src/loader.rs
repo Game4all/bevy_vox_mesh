@@ -1,6 +1,11 @@
-use anyhow::{anyhow, Error};
-use bevy::asset::{AssetLoader, LoadContext, LoadedAsset};
+use anyhow::{anyhow, Context};
+use bevy::{
+    asset::{io::Reader, AssetLoader, AsyncReadExt, LoadContext},
+    render::mesh::Mesh,
+    utils::BoxedFuture,
+};
 use block_mesh::QuadCoordinateConfig;
+use thiserror::Error;
 
 /// An asset loader capable of loading models in `.vox` files as usable [`bevy::render::mesh::Mesh`]es.
 ///
@@ -13,15 +18,30 @@ pub struct VoxLoader {
     pub(crate) v_flip_face: bool,
 }
 
+#[derive(Error, Debug)]
+pub enum VoxLoaderError {
+    #[error(transparent)]
+    InvalidAsset(#[from] anyhow::Error),
+}
+
 impl AssetLoader for VoxLoader {
+    type Asset = Mesh;
+    type Settings = ();
+    type Error = VoxLoaderError;
+
     fn load<'a>(
         &'a self,
-        bytes: &'a [u8],
+        reader: &'a mut Reader,
+        _settings: &'a Self::Settings,
         load_context: &'a mut LoadContext,
-    ) -> bevy::utils::BoxedFuture<'a, Result<(), Error>> {
+    ) -> BoxedFuture<'a, Result<Self::Asset, VoxLoaderError>> {
         Box::pin(async move {
-            self.process_vox_file(bytes, load_context)?;
-            Ok(())
+            let mut bytes = Vec::new();
+            reader
+                .read_to_end(&mut bytes)
+                .await
+                .map_err(|e| VoxLoaderError::InvalidAsset(anyhow!(e)))?;
+            Ok(self.process_vox_file(&bytes, load_context)?)
         })
     }
 
@@ -35,10 +55,10 @@ impl VoxLoader {
         &self,
         bytes: &'a [u8],
         load_context: &'a mut LoadContext,
-    ) -> Result<(), Error> {
+    ) -> Result<Mesh, VoxLoaderError> {
         let file = match dot_vox::load_bytes(bytes) {
             Ok(data) => data,
-            Err(error) => return Err(anyhow!(error)),
+            Err(error) => return Err(VoxLoaderError::InvalidAsset(anyhow!(error))),
         };
 
         let palette: Vec<[f32; 4]> = file
@@ -47,6 +67,7 @@ impl VoxLoader {
             .map(|color| color.to_le_bytes().map(|byte| byte as f32 / u8::MAX as f32))
             .collect();
 
+        let mut default_mesh: Option<Mesh> = None;
         for (index, model) in file.models.iter().enumerate() {
             let (shape, buffer) = crate::voxel::load_from_model(model);
             let mesh =
@@ -54,17 +75,14 @@ impl VoxLoader {
 
             match index {
                 0 => {
-                    load_context.set_default_asset(LoadedAsset::new(mesh.clone()));
+                    default_mesh = Some(mesh);
                 }
                 _ => {
-                    load_context.set_labeled_asset(
-                        &format!("model{}", index),
-                        LoadedAsset::new(mesh.clone()),
-                    );
+                    load_context.add_labeled_asset(format!("model{}", index), mesh);
                 }
             }
         }
 
-        Ok(())
+        Ok(default_mesh.context("No models found in vox file")?)
     }
 }
