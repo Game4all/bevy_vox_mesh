@@ -64,7 +64,10 @@ impl VoxLoader {
         let palette: Vec<[f32; 4]> = file
             .palette
             .iter()
-            .map(|color| color.to_le_bytes().map(|byte| byte as f32 / u8::MAX as f32))
+            .map(|color| {
+                let rgba: [u8; 4] = color.into();
+                rgba.map(|byte| byte as f32 / u8::MAX as f32)
+            })
             .collect();
 
         let mut default_mesh: Option<Mesh> = None;
