@@ -41,7 +41,7 @@ fn setup(
         transform: Transform::from_scale((0.01, 0.01, 0.01).into())
             * Transform::from_rotation(Quat::from_axis_angle(Vec3::Y, PI))
             * Transform::from_translation(Vec3::new(0., 20., 0.)),
-        mesh: assets.load("chicken.vox"),
+        mesh: assets.load("shapes.vox#turret-barrel"),
         material: stdmats.add(Color::rgb(1., 1., 1.).into()),
         ..Default::default()
     });
