@@ -28,7 +28,6 @@ use block_mesh::{QuadCoordinateConfig, RIGHT_HANDED_Y_UP_CONFIG};
 mod loader;
 #[doc(inline)]
 use loader::VoxLoader;
-
 mod mesh;
 mod voxel;
 

@@ -10,9 +10,7 @@ use crate::voxel::Voxel;
 pub(crate) fn mesh_model(
     buffer_shape: RuntimeShape<u32, 3>,
     buffer: &[Voxel],
-    palette: &[[f32; 4]],
     quads_config: &QuadCoordinateConfig,
-    v_flip_face: bool,
 ) -> Mesh {
     let mut greedy_quads_buffer = GreedyQuadsBuffer::new(buffer_shape.size() as usize);
 
@@ -33,7 +31,6 @@ pub(crate) fn mesh_model(
     let mut positions = Vec::with_capacity(num_vertices);
     let mut normals = Vec::with_capacity(num_vertices);
     let mut uvs = Vec::with_capacity(num_vertices);
-    let mut colors = Vec::with_capacity(num_vertices);
 
     let mut render_mesh = Mesh::new(PrimitiveTopology::TriangleList);
 
@@ -45,7 +42,6 @@ pub(crate) fn mesh_model(
     {
         for quad in group.iter() {
             let palette_index = buffer[buffer_shape.linearize(quad.minimum) as usize].0;
-            colors.extend_from_slice(&[palette[palette_index as usize]; 4]);
             indices.extend_from_slice(&face.quad_mesh_indices(positions.len() as u32));
             positions.extend_from_slice(
                 &face
@@ -59,7 +55,8 @@ pub(crate) fn mesh_model(
                         ]
                     }), // move center of the mesh center
             );
-            uvs.extend_from_slice(&face.tex_coords(quads_config.u_flip_face, v_flip_face, quad));
+            let u = palette_index as f32 / u8::MAX as f32;
+            uvs.extend_from_slice(&[[u, 0.5], [u, 0.5], [u, 0.5], [u, 0.5]]);
             normals.extend_from_slice(&face.quad_mesh_normals());
         }
     }
@@ -74,11 +71,6 @@ pub(crate) fn mesh_model(
         VertexAttributeValues::Float32x3(normals),
     );
     render_mesh.insert_attribute(Mesh::ATTRIBUTE_UV_0, VertexAttributeValues::Float32x2(uvs));
-
-    render_mesh.insert_attribute(
-        Mesh::ATTRIBUTE_COLOR,
-        VertexAttributeValues::Float32x4(colors),
-    );
 
     render_mesh.set_indices(Some(Indices::U32(indices.clone())));
 

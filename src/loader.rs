@@ -1,8 +1,9 @@
+
 use anyhow::{anyhow, Context};
 use bevy::{
     asset::{io::Reader, AssetLoader, AsyncReadExt, LoadContext},
-    render::mesh::Mesh,
-    utils::BoxedFuture,
+    render::{mesh::Mesh, texture::Image, render_resource::{Extent3d, TextureDimension, TextureFormat}},
+    utils::BoxedFuture, pbr::StandardMaterial,
 };
 use block_mesh::QuadCoordinateConfig;
 use dot_vox::SceneNode;
@@ -63,14 +64,17 @@ impl VoxLoader {
             Err(error) => return Err(VoxLoaderError::InvalidAsset(anyhow!(error))),
         };
         
-        let palette: Vec<[f32; 4]> = file
-        .palette
-        .iter()
-        .map(|color| {
-            let rgba: [u8; 4] = color.into();
-            rgba.map(|byte| byte as f32 / u8::MAX as f32)
-        })
-        .collect();
+        let color_data: Vec<u8> = file.palette.iter().flat_map(|c| {
+            let rgba: [u8; 4] = c.into(); 
+            rgba
+        }).collect();
+        let color_image = Image::new(Extent3d { width: 256, height: 1, depth_or_array_layers: 1 }, TextureDimension::D2, color_data, TextureFormat::Rgba8Unorm);
+        let color_handle = load_context.add_labeled_asset("base_color".to_string(), color_image);
+        let material = StandardMaterial {
+            base_color_texture: Some(color_handle),
+            ..Default::default()
+        };
+        load_context.add_labeled_asset("material".to_string(), material);
         
         let named_models = parse_scene_graph(&file.scenes, &file.scenes[0], &None);
         let mut default_mesh: Option<Mesh> = None;
@@ -78,7 +82,7 @@ impl VoxLoader {
             let Some(model) = file.models.get(id as usize) else { continue };
             let (shape, buffer) = crate::voxel::load_from_model(model);
             let mesh =
-            crate::mesh::mesh_model(shape, &buffer, &palette, &self.config, self.v_flip_face);
+            crate::mesh::mesh_model(shape, &buffer,  &self.config);
             if id == 0 {
                 default_mesh = Some(mesh.clone());
             }
