@@ -1,10 +1,11 @@
 
 use anyhow::{anyhow, Context};
 use bevy::{
-    asset::{io::Reader, AssetLoader, AsyncReadExt, LoadContext},
-    render::{mesh::Mesh, texture::Image, render_resource::{Extent3d, TextureDimension, TextureFormat}},
+    asset::{io::Reader, AssetLoader, AsyncReadExt, LoadContext, Handle},
+    render::{mesh::Mesh, texture::Image, render_resource::{Extent3d, TextureDimension, TextureFormat}, color::Color},
     utils::BoxedFuture, pbr::StandardMaterial,
 };
+use serde::{Deserialize, Serialize};
 use block_mesh::QuadCoordinateConfig;
 use dot_vox::SceneNode;
 use thiserror::Error;
@@ -21,6 +22,17 @@ pub struct VoxLoader {
     pub(crate) v_flip_face: bool,
 }
 
+#[derive(Serialize, Deserialize)]
+pub struct VoxLoaderSettings {
+    pub emission_strength: f32,
+}
+
+impl Default for VoxLoaderSettings {
+    fn default() -> Self {
+        Self { emission_strength: 2.0 }
+    }
+}
+
 #[derive(Error, Debug)]
 pub enum VoxLoaderError {
     #[error(transparent)]
@@ -29,7 +41,7 @@ pub enum VoxLoaderError {
 
 impl AssetLoader for VoxLoader {
     type Asset = Mesh;
-    type Settings = ();
+    type Settings = VoxLoaderSettings;
     type Error = VoxLoaderError;
     
     fn load<'a>(
@@ -44,7 +56,7 @@ impl AssetLoader for VoxLoader {
             .read_to_end(&mut bytes)
             .await
             .map_err(|e| VoxLoaderError::InvalidAsset(anyhow!(e)))?;
-            Ok(self.process_vox_file(&bytes, load_context)?)
+            Ok(self.process_vox_file(&bytes, load_context, _settings)?)
         })
     }
     
@@ -58,6 +70,7 @@ impl VoxLoader {
         &self,
         bytes: &'a [u8],
         load_context: &'a mut LoadContext,
+        settings: &'a VoxLoaderSettings,
     ) -> Result<Mesh, VoxLoaderError> {
         let file = match dot_vox::load_bytes(bytes) {
             Ok(data) => data,
@@ -69,9 +82,47 @@ impl VoxLoader {
             rgba
         }).collect();
         let color_image = Image::new(Extent3d { width: 256, height: 1, depth_or_array_layers: 1 }, TextureDimension::D2, color_data, TextureFormat::Rgba8Unorm);
-        let color_handle = load_context.add_labeled_asset("base_color".to_string(), color_image);
+        let color_handle = load_context.add_labeled_asset("material_base_color".to_string(), color_image);
+        
+        let emissive_data: Vec<Option<f32>> = file.materials.iter().map(|m| {
+            if m.material_type() == Some("_emit") {
+                if let Some(emission) = m.weight() {
+                    if let Some(radiance) = m.radiant_flux() {
+                        Some(emission * (radiance + 1.0))
+                    } else {
+                        Some(emission)
+                    }
+                } else {
+                    None
+                }
+            } else {
+                None
+            }
+        }).collect();
+        let emissive_filtered: Vec<f32> = emissive_data.iter().filter(|e| e.is_some()).map(|e| e.unwrap()).collect();
+        let has_emissive = !emissive_filtered.is_empty();
+        let emissive_texture: Option<Handle<Image>> = if has_emissive {
+            let emissive_raw: Vec<u8> = emissive_data.iter().zip(file.palette.iter()).flat_map(|(emission, color)| {
+                if let Some(value) = emission {
+                    let rgba: [u8; 4] = color.into();
+                    let output: Vec<u8> = rgba.iter().flat_map(|b| ((*b as f32 / u8::MAX as f32) * value).to_le_bytes() ).collect();
+                    output
+                } else {
+                    let rgba: [f32; 4] = [0.0, 0.0, 0.0, 0.0];
+                    let output: Vec<u8> = rgba.iter().flat_map(|b| b.to_le_bytes()).collect();
+                    output
+                }
+            }).collect();
+            let emissive_image = Image::new(Extent3d { width: 256, height: 1, depth_or_array_layers: 1 }, TextureDimension::D2, emissive_raw, TextureFormat::Rgba32Float);
+            let emissive_handle = load_context.add_labeled_asset("material_emission".to_string(), emissive_image);
+            Some(emissive_handle)
+        } else {
+            None
+        };
         let material = StandardMaterial {
             base_color_texture: Some(color_handle),
+            emissive: if has_emissive { Color::WHITE * settings.emission_strength } else { Color::BLACK },
+            emissive_texture, 
             ..Default::default()
         };
         load_context.add_labeled_asset("material".to_string(), material);
