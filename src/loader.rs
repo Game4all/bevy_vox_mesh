@@ -77,13 +77,15 @@ impl VoxLoader {
             Err(error) => return Err(VoxLoaderError::InvalidAsset(anyhow!(error))),
         };
         
+        // Color
         let color_data: Vec<u8> = file.palette.iter().flat_map(|c| {
             let rgba: [u8; 4] = c.into(); 
             rgba
         }).collect();
-        let color_image = Image::new(Extent3d { width: 256, height: 1, depth_or_array_layers: 1 }, TextureDimension::D2, color_data, TextureFormat::Rgba8Unorm);
+        let color_image = Image::new(Extent3d { width: 256, height: 1, depth_or_array_layers: 1 }, TextureDimension::D2, color_data, TextureFormat::Rgba8UnormSrgb);
         let color_handle = load_context.add_labeled_asset("material_base_color".to_string(), color_image);
         
+        // Emissive
         let emissive_data: Vec<Option<f32>> = file.materials.iter().map(|m| {
             if m.material_type() == Some("_emit") {
                 if let Some(emission) = m.weight() {
@@ -99,8 +101,7 @@ impl VoxLoader {
                 None
             }
         }).collect();
-        let emissive_filtered: Vec<f32> = emissive_data.iter().filter(|e| e.is_some()).map(|e| e.unwrap()).collect();
-        let has_emissive = !emissive_filtered.is_empty();
+        let has_emissive = !emissive_data.iter().flatten().cloned().collect::<Vec<f32>>().is_empty();
         let emissive_texture: Option<Handle<Image>> = if has_emissive {
             let emissive_raw: Vec<u8> = emissive_data.iter().zip(file.palette.iter()).flat_map(|(emission, color)| {
                 if let Some(value) = emission {
@@ -119,14 +120,47 @@ impl VoxLoader {
         } else {
             None
         };
+
+        // Roughness/ Metalness
+        let roughness: Vec<f32> = file.materials.iter().map(|m| m.roughness().unwrap_or(0.0)).collect();
+        let max_roughness = roughness.iter().cloned().max_by(|a, b| a.partial_cmp(b).expect("tried to compare NaN")).unwrap();
+        let has_varying_roughness = max_roughness - roughness.iter().cloned().min_by(|a, b| a.partial_cmp(b).expect("tried to compare NaN")).unwrap() > 0.0;
+        
+        let metalness: Vec<f32> = file.materials.iter().map(|m| {
+            if m.material_type() == Some("_metal") {
+                if let Some(weight) = m.weight() {
+                    return weight;
+                }
+            }
+            0.0
+        }).collect();
+        let max_metalness = metalness.iter().cloned().max_by(|a, b| a.partial_cmp(b).expect("tried to compare NaN")).unwrap();
+        let has_varying_metalness = max_metalness - metalness.iter().cloned().min_by(|a, b| a.partial_cmp(b).expect("tried to compare NaN")).unwrap() > 0.0;
+        let has_metallic_roughness = has_varying_roughness || has_varying_metalness;
+        let metallic_roughness_texture: Option<Handle<Image>> = if has_metallic_roughness {
+            let raw: Vec<u8> = roughness.iter().zip(metalness.iter()).flat_map(|(rough, metal)| {
+                let output: Vec<u8> = [0.0, *rough, *metal, 0.0].iter().flat_map(|b| b.to_le_bytes()).collect();
+                output
+            }).collect();
+            let image = Image::new(Extent3d { width: 256, height: 1, depth_or_array_layers: 1 }, TextureDimension::D2, raw, TextureFormat::Rgba32Float);
+            let handle = load_context.add_labeled_asset("material_metallic_roughness".to_string(), image);
+            Some(handle)
+        } else {
+            None
+        };
+        // Material
         let material = StandardMaterial {
             base_color_texture: Some(color_handle),
             emissive: if has_emissive { Color::WHITE * settings.emission_strength } else { Color::BLACK },
-            emissive_texture, 
+            emissive_texture,
+            perceptual_roughness: if has_metallic_roughness { 1.0 } else { max_roughness },
+            metallic: if has_metallic_roughness { 1.0 } else { max_metalness },
+            metallic_roughness_texture,
             ..Default::default()
         };
         load_context.add_labeled_asset("material".to_string(), material);
         
+        // Models
         let named_models = parse_scene_graph(&file.scenes, &file.scenes[0], &None);
         let mut default_mesh: Option<Mesh> = None;
         for NamedModel { name, id } in named_models {
