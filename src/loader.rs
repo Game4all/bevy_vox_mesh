@@ -82,20 +82,16 @@ impl VoxLoader {
             let rgba: [u8; 4] = c.into(); 
             rgba
         }).collect();
-        let color_image = Image::new(Extent3d { width: 256, height: 1, depth_or_array_layers: 1 }, TextureDimension::D2, color_data, TextureFormat::Rgba8UnormSrgb);
+        let color_image = Image::new(Extent3d { width: 256, height: 1, depth_or_array_layers: 1 }, TextureDimension::D2, color_data, TextureFormat::Rgba8Unorm);
         let color_handle = load_context.add_labeled_asset("material_base_color".to_string(), color_image);
         
         // Emissive
         let emissive_data: Vec<Option<f32>> = file.materials.iter().map(|m| {
-            if m.material_type() == Some("_emit") {
-                if let Some(emission) = m.weight() {
-                    if let Some(radiance) = m.radiant_flux() {
-                        Some(emission * (radiance + 1.0))
-                    } else {
-                        Some(emission)
-                    }
+            if let Some(emission) = m.emission() {
+                if let Some(radiance) = m.radiant_flux() {
+                    Some(emission * (radiance + 1.0))
                 } else {
-                    None
+                    Some(emission)
                 }
             } else {
                 None
@@ -120,19 +116,16 @@ impl VoxLoader {
         } else {
             None
         };
-
+        
         // Roughness/ Metalness
-        let roughness: Vec<f32> = file.materials.iter().map(|m| m.roughness().unwrap_or(0.0)).collect();
+        let roughness: Vec<f32> = file.materials.iter().map(|m| {
+            m.roughness().unwrap_or(0.0)
+        }).collect();
         let max_roughness = roughness.iter().cloned().max_by(|a, b| a.partial_cmp(b).expect("tried to compare NaN")).unwrap();
         let has_varying_roughness = max_roughness - roughness.iter().cloned().min_by(|a, b| a.partial_cmp(b).expect("tried to compare NaN")).unwrap() > 0.0;
         
         let metalness: Vec<f32> = file.materials.iter().map(|m| {
-            if m.material_type() == Some("_metal") {
-                if let Some(weight) = m.weight() {
-                    return weight;
-                }
-            }
-            0.0
+            m.metalness().unwrap_or(0.0)
         }).collect();
         let max_metalness = metalness.iter().cloned().max_by(|a, b| a.partial_cmp(b).expect("tried to compare NaN")).unwrap();
         let has_varying_metalness = max_metalness - metalness.iter().cloned().min_by(|a, b| a.partial_cmp(b).expect("tried to compare NaN")).unwrap() > 0.0;

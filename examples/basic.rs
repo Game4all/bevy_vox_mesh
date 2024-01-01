@@ -1,4 +1,4 @@
-use bevy::{prelude::*, core_pipeline::bloom::BloomSettings};
+use bevy::{prelude::*, core_pipeline::{bloom::BloomSettings, tonemapping::Tonemapping}};
 use bevy_vox_mesh::VoxMeshPlugin;
 use std::f32::consts::PI;
 
@@ -22,7 +22,8 @@ fn setup(
                 hdr: true,
                 ..Default::default()
             },
-            transform: Transform::from_xyz(2.0, 2.5, -5.0).looking_at(Vec3::ZERO, Vec3::Y),
+            transform: Transform::from_xyz(1.0, 1.5, 8.0).looking_at(Vec3::ZERO, Vec3::Y),
+            tonemapping: Tonemapping::AcesFitted,
             ..Default::default()
         },
         BloomSettings {
@@ -51,8 +52,8 @@ fn setup(
         transform: Transform::from_scale((0.05, 0.05, 0.05).into())
         * Transform::from_rotation(Quat::from_axis_angle(Vec3::Y, PI))
         * Transform::from_translation(Vec3::new(0., 20., 0.)),
-        mesh: assets.load("shapes.vox#perch"),
-        material: assets.load("shapes.vox#material"),
+        mesh: assets.load("monu1.vox"),
+        material: assets.load("monu1.vox#material"),
         ..Default::default()
     });
 }

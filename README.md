@@ -1,16 +1,35 @@
 <h1>
-<code>bevy_vox_mesh</code>
+<code>bevy_vox_scene</code>
 </h1>
 
 <a href="https://crates.io/crates/bevy_vox_mesh">
 <img height="24" src="https://img.shields.io/crates/v/bevy_vox_mesh?style=for-the-badge"/>
 </a>
 
-A plugin for the bevy engine which allows loading magica voxel `.vox` files directly into usable meshes. This uses mesh vertex coloring.
+A plugin for the bevy engine which allows loading magica voxel `.vox` files directly into usable meshes.
+`bevy_vox_scene` is forked from the excellent [`bevy_vox_mesh`](https://crates.io/crates/bevy_vox_mesh)
+
+## Differences between `bevy_vox_scene` and `bevy_vox_mesh`
+
+|                     |`bevy_vox_mesh`|`bevy_vox_scene`|
+| --- | --- | --- |
+| __Voxel materials__ | Uses the vertex color attribute for voxel colors, doesn't attempt to display other voxel material properties | Generates a texture atlas for voxel colors, and also for emission, roughness, and metalness, allowing you to more closely replicate the look of a Magica Voxel render in bevy |
+| __UV mapping__      | Uses "Minecraft-style" UV mapping, where a single texture can be tiled over each voxel in a mesh | Uses texture atlas UV mapping in order to display more voxel material properties, with no expectation that a texture will be tiled over each voxel |
+| __World assets__    | Access different models contained in a single world file using sub-assets labelled by their index in the file `#model{index}`. This indexing system gets difficult to maintain with large world files, and can change if you delete models within the file. | Access different models using the name assigned to an instance of the model in the world file `#{my-named-model}`. User is responsible for ensuring the models you want to load have a name that is unique within that file. |
+
+Which crate you should use depends on your use-case, and the look you're going for:
+
+### Comparison of use cases
+
+|                     |`bevy_vox_mesh`|`bevy_vox_scene`|
+| --- | --- | --- |
+| __Look__ | "Minecraft-style", with a texture tiled over each voxel | Recreate the look of a MagicaVoxel render with material properties such as emission, roughness and metalness |
+| __File organisation__ | Have a single model, or a small number of models, in each file, and don't need a consistent palette between them | Have multiple models in a single MagicaVoxel world file, with the same palette shared between them |
+
 
 ## Bevy compatibility
 
-| Bevy version | Plugin version |
+| Bevy version | `bevy-vox-mesh` version |
 | ------------ | -------------- |
 | 0.5          | 0.1, 0.2       |
 | 0.8          | 0.4            |
@@ -18,6 +37,10 @@ A plugin for the bevy engine which allows loading magica voxel `.vox` files dire
 | 0.10         | 0.6            |
 | 0.11         | 0.7, 0.7.1     |
 | 0.12         | 0.8            |
+
+| Bevy version | `bevy-vox-scene` version | Magica Voxel version |
+| ------------ | -------------- | --- |
+| 0.12          | 0.9       | 0.99.6 |
 
 ## Usage
 
