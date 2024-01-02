@@ -3,7 +3,7 @@ use anyhow::{anyhow, Context};
 use bevy::{
     asset::{io::Reader, AssetLoader, AsyncReadExt, LoadContext, Handle},
     render::{mesh::Mesh, texture::Image, render_resource::{Extent3d, TextureDimension, TextureFormat}, color::Color},
-    utils::BoxedFuture, pbr::StandardMaterial,
+    utils::BoxedFuture, pbr::{StandardMaterial, AlphaMode},
 };
 use serde::{Deserialize, Serialize};
 use block_mesh::QuadCoordinateConfig;
@@ -78,8 +78,11 @@ impl VoxLoader {
         };
         
         // Color
-        let color_data: Vec<u8> = file.palette.iter().flat_map(|c| {
-            let rgba: [u8; 4] = c.into(); 
+        let color_data: Vec<u8> = file.palette.iter().zip(file.materials.iter()).flat_map(|(c, m)| {
+            let mut rgba: [u8; 4] = c.into(); 
+            if let Some(opacity) = m.opacity() {
+                rgba[3] = ((1.0 - opacity) * u8::MAX as f32) as u8;
+            }
             rgba
         }).collect();
         let color_image = Image::new(Extent3d { width: 256, height: 1, depth_or_array_layers: 1 }, TextureDimension::D2, color_data, TextureFormat::Rgba8Unorm);
@@ -141,6 +144,24 @@ impl VoxLoader {
         } else {
             None
         };
+        
+        // Specular transmission
+        let transparency_data: Vec<Option<f32>> = file.materials.iter().map(|m| m.opacity()).collect();
+        let has_transparency = !transparency_data.iter().flatten().cloned().collect::<Vec<f32>>().is_empty();
+        let specular_transmission_texture: Option<Handle<Image>> = if has_transparency {
+            let raw: Vec<u8> = transparency_data.iter().flat_map(|t| {
+                t.unwrap_or(0.0).to_le_bytes()
+            }).collect();
+            let image = Image::new(Extent3d { width: 256, height: 1, depth_or_array_layers: 1 }, TextureDimension::D2, raw, TextureFormat::R32Float);
+            let handle = load_context.add_labeled_asset("material_specular_transmission".to_string(), image);
+            Some(handle)
+        } else {
+            None
+        };
+        let iors: Vec<f32> = file.materials.iter().map(|m| m.refractive_index() ).flatten().collect();
+        let average_ior = if iors.len() > 0 { 1.0 + (iors.iter().cloned().reduce(|acc, e| acc + e).unwrap_or(0.0) / iors.len() as f32) } else { 0.0 };
+        let translucent_voxel_indices: Vec<u8> = file.materials.iter().enumerate().filter_map(|(i, val)| if val.opacity().is_some() { Some(i as u8) } else { None }).collect();
+
         // Material
         let material = StandardMaterial {
             base_color_texture: Some(color_handle),
@@ -149,6 +170,11 @@ impl VoxLoader {
             perceptual_roughness: if has_metallic_roughness { 1.0 } else { max_roughness },
             metallic: if has_metallic_roughness { 1.0 } else { max_metalness },
             metallic_roughness_texture,
+            specular_transmission: if has_transparency { 1.0 } else { 0.0 },
+            specular_transmission_texture: specular_transmission_texture,
+            ior: average_ior,
+            alpha_mode: if has_transparency { AlphaMode::Blend } else { AlphaMode::Opaque },
+            thickness: if has_transparency { 4.0 } else { 0.0 },
             ..Default::default()
         };
         load_context.add_labeled_asset("material".to_string(), material);
@@ -158,7 +184,7 @@ impl VoxLoader {
         let mut default_mesh: Option<Mesh> = None;
         for NamedModel { name, id } in named_models {
             let Some(model) = file.models.get(id as usize) else { continue };
-            let (shape, buffer) = crate::voxel::load_from_model(model);
+            let (shape, buffer) = crate::voxel::load_from_model(model, &translucent_voxel_indices);
             let mesh =
             crate::mesh::mesh_model(shape, &buffer,  &self.config);
             if id == 0 {
