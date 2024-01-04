@@ -3,12 +3,14 @@ use anyhow::{anyhow, Context};
 use bevy::{
     asset::{io::Reader, AssetLoader, AsyncReadExt, LoadContext, Handle},
     render::{mesh::Mesh, texture::Image, render_resource::{Extent3d, TextureDimension, TextureFormat}, color::Color},
-    utils::BoxedFuture, pbr::StandardMaterial,
+    utils::BoxedFuture, pbr::StandardMaterial, math::Mat4,
 };
 use serde::{Deserialize, Serialize};
 use block_mesh::QuadCoordinateConfig;
 use dot_vox::SceneNode;
 use thiserror::Error;
+
+use crate::voxel_scene::{self, VoxelScene};
 
 /// An asset loader capable of loading models in `.vox` files as usable [`bevy::render::mesh::Mesh`]es.
 ///
@@ -151,8 +153,12 @@ impl VoxLoader {
             metallic_roughness_texture,
             ..Default::default()
         };
-        load_context.add_labeled_asset("material".to_string(), material);
+        let material_handle = load_context.add_labeled_asset("material".to_string(), material);
         
+        if let Some(root) = voxel_scene::parse_scene_graph(&file.scenes, &file.scenes[0], None, load_context) {
+            //println!("graph {:#?}", root);
+            load_context.add_labeled_asset("Scene".to_string(), VoxelScene { root, material: material_handle });
+        }
         // Models
         let named_models = parse_scene_graph(&file.scenes, &file.scenes[0], &None);
         let mut default_mesh: Option<Mesh> = None;
@@ -165,7 +171,7 @@ impl VoxLoader {
                 default_mesh = Some(mesh.clone());
             }
             load_context.add_labeled_asset(name, mesh);
-        }           
+        }     
         Ok(default_mesh.context("No models found in vox file")?)
     }
 }
@@ -178,17 +184,11 @@ struct NamedModel {
 fn parse_scene_graph(
     graph: &Vec<SceneNode>,
     node: &SceneNode,
-    node_name: &Option<String>,
+    node_name: &Option<&String>,
 ) -> Vec<NamedModel> {
     match node {
         SceneNode::Transform { attributes, frames: _, child, layer_id: _ } => {
-            let handle: Option<String> = match (node_name, &attributes.get("_name")) {
-                (None, None) => None,
-                (None, Some(name)) => Some(name.to_string()),
-                (Some(name), None) => Some(name.to_string()),
-                (Some(a), Some(b)) => Some(format!("{a}-{b}")),
-            };
-            parse_scene_graph(graph, &graph[*child as usize], &handle)
+            parse_scene_graph(graph, &graph[*child as usize], &attributes.get("_name"))
         }
         SceneNode::Group { attributes: _, children } => {
             children.iter().flat_map(|child| {
@@ -197,7 +197,7 @@ fn parse_scene_graph(
         }
         SceneNode::Shape { attributes: _, models } => {
             models.iter().map(|model| {
-                let handle = if let Some(name) = node_name { name.to_owned() } else { format!("model{}", model.model_id) };
+                let handle = if let Some(name) = node_name { name.to_string() } else { format!("model{}", model.model_id) };
                 NamedModel { name: handle, id: model.model_id }
             }).collect()
         }

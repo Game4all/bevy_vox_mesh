@@ -22,6 +22,7 @@ ndcopy = "0.3.0"
 anyhow = "1.0.38"
 thiserror = "1.0.50"
 serde = "1.0.193"
+bevy_panorbit_camera = "0.10.0"
 
 [dev-dependencies]
 bevy = { version = "0.12.0" }

@@ -20,12 +20,14 @@
 //!```
 
 use bevy::{
-    app::{App, Plugin},
+    app::{App, Plugin, Update},
     asset::AssetApp,
 };
-use block_mesh::{QuadCoordinateConfig, RIGHT_HANDED_Y_UP_CONFIG};
+use block_mesh::{QuadCoordinateConfig, RIGHT_HANDED_Y_UP_CONFIG, OrientedBlockFace, AxisPermutation, Axis};
 
 mod loader;
+mod voxel_scene;
+pub use voxel_scene::VoxelSceneBundle;
 #[doc(inline)]
 use loader::VoxLoader;
 mod mesh;
@@ -60,9 +62,12 @@ impl Default for VoxMeshPlugin {
 
 impl Plugin for VoxMeshPlugin {
     fn build(&self, app: &mut App) {
-        app.register_asset_loader(VoxLoader {
+        app
+        .init_asset::<voxel_scene::VoxelScene>()
+        .register_asset_loader(VoxLoader {
             config: self.config.clone(),
             v_flip_face: self.v_flip_faces,
-        });
+        })
+        .add_systems(Update, voxel_scene::spawn_vox_scenes);
     }
 }
