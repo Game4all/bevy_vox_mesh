@@ -11,6 +11,12 @@ pub struct VoxelSceneBundle {
 pub struct VoxelScene {
     pub root: VoxelNode,
     pub material: Handle<StandardMaterial>,
+    pub layers: Vec<LayerInfo>,
+}
+
+pub struct LayerInfo {
+    pub name: Option<String>,
+    pub is_hidden: bool,
 }
 
 #[derive(Debug)]
@@ -23,8 +29,11 @@ pub struct VoxelNode {
     layer_id: u32,
 }
 
-#[derive(Component)]
-struct VoxelLayer(u32);
+#[derive(Component, Clone)]
+pub struct VoxelLayer {
+    pub id: u32,
+    pub name: Option<String>,
+}
 
 pub fn spawn_vox_scenes(
     mut commands: Commands,
@@ -33,7 +42,7 @@ pub fn spawn_vox_scenes(
 ) {
     for (root, transform, scene_handle) in query.iter() {
         if let Some(scene) = vox_scenes.get(scene_handle) {
-            spawn_voxel_node_recursive(&mut commands, &scene.root, root, &scene.material);
+            spawn_voxel_node_recursive(&mut commands, &scene.root, root, &scene);
             commands.entity(root)
             .remove::<Handle<VoxelScene>>()
             .insert(*transform);
@@ -45,7 +54,7 @@ fn spawn_voxel_node_recursive(
     commands: &mut Commands,
     voxel_node: &VoxelNode,
     entity: Entity,
-    material: &Handle<StandardMaterial>,
+    scene: &VoxelScene,
 ) {
     let mut entity_commands = commands.entity(entity);
     if let Some(name) = &voxel_node.name {
@@ -54,21 +63,29 @@ fn spawn_voxel_node_recursive(
     if let Some(model) = &voxel_node.model {
         entity_commands.insert(PbrBundle {
             mesh: model.clone(),
-            material: material.clone(),
+            material: scene.material.clone(),
             ..default()
         });
     } else {
         entity_commands.insert(SpatialBundle::default());
     }
-    entity_commands.insert((
+
+    if let Some(layer_info) = scene.layers.get(voxel_node.layer_id as usize) {
+        entity_commands.insert((
+            VoxelLayer {
+                id: voxel_node.layer_id,
+                name: layer_info.name.clone(),
+            },
+            if voxel_node.is_hidden || layer_info.is_hidden { Visibility::Hidden } else { Visibility::Inherited },
+        ));
+    }
+    entity_commands.insert(
         Transform::from_matrix(voxel_node.transform),
-        VoxelLayer(voxel_node.layer_id),
-        if voxel_node.is_hidden { Visibility::Hidden } else { Visibility::Inherited },
-    )).with_children(|builder| {
+    ).with_children(|builder| {
         for child in &voxel_node.children {
             let mut child_entity = builder.spawn_empty();
             let id = child_entity.id();
-            spawn_voxel_node_recursive(child_entity.commands(), &child, id, material);
+            spawn_voxel_node_recursive(child_entity.commands(), &child, id, scene);
         }
     });
 }

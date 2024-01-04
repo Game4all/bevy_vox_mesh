@@ -10,7 +10,7 @@ use block_mesh::QuadCoordinateConfig;
 use dot_vox::SceneNode;
 use thiserror::Error;
 
-use crate::voxel_scene::{self, VoxelScene};
+use crate::voxel_scene::{self, VoxelScene, VoxelLayer, LayerInfo};
 
 /// An asset loader capable of loading models in `.vox` files as usable [`bevy::render::mesh::Mesh`]es.
 ///
@@ -183,7 +183,12 @@ impl VoxLoader {
         
         if let Some(root) = voxel_scene::parse_scene_graph(&file.scenes, &file.scenes[0], None, load_context) {
             //println!("graph {:#?}", root);
-            load_context.add_labeled_asset("Scene".to_string(), VoxelScene { root, material: material_handle });
+            let scene = VoxelScene { 
+                root, 
+                material: material_handle,
+                layers: file.layers.iter().map(|layer| LayerInfo { name: layer.name(), is_hidden: layer.hidden() }).collect(), 
+            };
+            load_context.add_labeled_asset("Scene".to_string(), scene);
         }
         // Models
         let named_models = parse_scene_graph(&file.scenes, &file.scenes[0], &None);
