@@ -1,17 +1,26 @@
-use bevy::{prelude::*, core_pipeline::{bloom::BloomSettings, tonemapping::Tonemapping}};
+use bevy::{prelude::*, core_pipeline::{bloom::BloomSettings, tonemapping::Tonemapping, prepass::DepthPrepass, core_3d::ScreenSpaceTransmissionQuality, experimental::taa::TemporalAntiAliasPlugin}};
 use bevy_vox_mesh::{VoxMeshPlugin, VoxelSceneBundle};
 use std::f32::consts::PI;
 use bevy_panorbit_camera::{PanOrbitCameraPlugin, PanOrbitCamera};
 
 fn main() {
-    App::default()
-    .add_plugins((
+    let mut app = App::new();
+    
+    app.add_plugins((
         DefaultPlugins,
         PanOrbitCameraPlugin,
         VoxMeshPlugin::default()
     ))
-    .add_systems(Startup, setup)
-    .run();
+    .add_systems(Startup, setup);
+    
+    // *Note:* TAA is not _required_ for specular transmission, but
+    // it _greatly enhances_ the look of the resulting blur effects.
+    // Sadly, it's not available under WebGL.
+    #[cfg(not(all(feature = "webgl2", target_arch = "wasm32")))]
+    app.insert_resource(Msaa::Off)
+    .add_plugins(TemporalAntiAliasPlugin);
+    
+    app.run();
 }
 
 fn setup(
@@ -26,8 +35,13 @@ fn setup(
                 hdr: true,
                 ..Default::default()
             },
+            camera_3d: Camera3d {
+                screen_space_specular_transmission_quality: ScreenSpaceTransmissionQuality::High,
+                screen_space_specular_transmission_steps: 2,
+                ..default()
+            },
             transform: Transform::from_xyz(0.0, 1.5, 8.0).looking_at(Vec3::ZERO, Vec3::Y),
-            tonemapping: Tonemapping::AcesFitted,
+            tonemapping: Tonemapping::None,
             ..Default::default()
         },
         PanOrbitCamera::default(),
@@ -35,6 +49,7 @@ fn setup(
             intensity: 0.3,
             ..default()
         },
+        DepthPrepass,
     ));
     
     commands.spawn(DirectionalLightBundle {

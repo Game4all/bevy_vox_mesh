@@ -41,7 +41,7 @@ pub(crate) fn mesh_model(
         .zip(quads_config.faces.as_ref())
     {
         for quad in group.iter() {
-            let palette_index = buffer[buffer_shape.linearize(quad.minimum) as usize].0;
+            let palette_index = buffer[buffer_shape.linearize(quad.minimum) as usize].index;
             indices.extend_from_slice(&face.quad_mesh_indices(positions.len() as u32));
             positions.extend_from_slice(
                 &face
