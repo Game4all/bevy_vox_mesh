@@ -33,7 +33,7 @@ pub(crate) fn load_from_model(model: &Model) -> (RuntimeShape<u32, 3>, Vec<Voxel
 
     model.voxels.iter().for_each(|voxel| {
         let index =
-            model_shape.linearize([voxel.x as u32 + 1, voxel.z as u32 + 1, voxel.y as u32 + 1])
+            model_shape.linearize([model.size.x - voxel.x as u32, voxel.z as u32 + 1, voxel.y as u32 + 1])
                 as usize;
         data[index] = Voxel(voxel.i);
     });
