@@ -1,6 +1,14 @@
 use bevy::{prelude::*, asset::LoadContext};//use bevy::{asset::{Handle, LoadContext}, pbr::{StandardMaterial, PbrBundle}, render::mesh::Mesh, math::{Mat4, Mat3, Vec3, Vec4}, ecs::{system::{Commands, Query}, entity::Entity, query::Added, component::Component}, transform::components::Transform, core::Name};
 use dot_vox::{SceneNode, Frame};
-
+/*
+TODO:
+[ ] only use transmissive texture for models that contain translucent voxels
+[ ] Can some of the textures be 16-bit unorm?
+[ ] Named models -> only parse tree once
+[ ] Named models -> disambiguate names
+[ ] Named models -> use a map to modelId to handle references
+[ ] Make VoxelScene the defaul asset returned
+ */
 #[derive(Bundle)]
 pub struct VoxelSceneBundle {
     pub scene: Handle<VoxelScene>,

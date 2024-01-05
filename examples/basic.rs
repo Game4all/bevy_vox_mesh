@@ -1,4 +1,4 @@
-use bevy::{prelude::*, core_pipeline::{bloom::BloomSettings, tonemapping::Tonemapping, prepass::DepthPrepass, core_3d::ScreenSpaceTransmissionQuality, experimental::taa::TemporalAntiAliasPlugin}};
+use bevy::{prelude::*, core_pipeline::{bloom::BloomSettings, tonemapping::Tonemapping, prepass::DepthPrepass, core_3d::ScreenSpaceTransmissionQuality, experimental::taa::{TemporalAntiAliasPlugin, TemporalAntiAliasBundle}}};
 use bevy_vox_mesh::{VoxMeshPlugin, VoxelSceneBundle};
 use std::f32::consts::PI;
 use bevy_panorbit_camera::{PanOrbitCameraPlugin, PanOrbitCamera};
@@ -41,7 +41,7 @@ fn setup(
                 ..default()
             },
             transform: Transform::from_xyz(0.0, 1.5, 8.0).looking_at(Vec3::ZERO, Vec3::Y),
-            tonemapping: Tonemapping::None,
+            tonemapping: Tonemapping::AcesFitted,
             ..Default::default()
         },
         PanOrbitCamera::default(),
@@ -49,7 +49,7 @@ fn setup(
             intensity: 0.3,
             ..default()
         },
-        DepthPrepass,
+        TemporalAntiAliasBundle::default(),
     ));
     
     commands.spawn(DirectionalLightBundle {
@@ -71,14 +71,15 @@ fn setup(
     // });
     
     // commands.spawn(PbrBundle {
-        //     mesh: meshes.add(Mesh::from(shape::Plane { subdivisions: 2,  size: 5.0 })),
-        //     material: stdmats.add(Color::rgb(0.3, 0.5, 0.3).into()),
-        //     ..Default::default()
-        // });
-        let scene = commands.spawn(VoxelSceneBundle {
+    //         mesh: meshes.add(Mesh::from(shape::Plane { subdivisions: 2,  size: 5.0 })),
+    //         material: stdmats.add(Color::rgb(0.3, 0.5, 0.3).into()),
+    //         ..Default::default()
+    //     });
+
+        commands.spawn(VoxelSceneBundle {
             scene: assets.load("shapes.vox#Scene"),
             transform: Transform::from_scale(Vec3::splat(0.05)),
-        }).id();
+        });
         // commands.spawn(SpatialBundle {
         //     transform: Transform::from_scale((0.05, 0.05, 0.05).into())
         //     * Transform::from_rotation(Quat::from_axis_angle(Vec3::Y, PI))

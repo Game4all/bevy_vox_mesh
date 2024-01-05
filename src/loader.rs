@@ -80,11 +80,8 @@ impl VoxLoader {
         };
         
         // Color
-        let color_data: Vec<u8> = file.palette.iter().zip(file.materials.iter()).flat_map(|(c, m)| {
-            let mut rgba: [u8; 4] = c.into(); 
-            if let Some(opacity) = m.opacity() {
-                rgba[3] = ((1.0 - opacity) * u8::MAX as f32) as u8;
-            }
+        let color_data: Vec<u8> = file.palette.iter().flat_map(|c| {
+            let rgba: [u8; 4] = c.into(); 
             rgba
         }).collect();
         let color_image = Image::new(Extent3d { width: 256, height: 1, depth_or_array_layers: 1 }, TextureDimension::D2, color_data, TextureFormat::Rgba8Unorm);
@@ -175,7 +172,6 @@ impl VoxLoader {
             specular_transmission: if has_transparency { 1.0 } else { 0.0 },
             specular_transmission_texture: specular_transmission_texture,
             ior: average_ior,
-            alpha_mode: if has_transparency { AlphaMode::Blend } else { AlphaMode::Opaque },
             thickness: if has_transparency { 4.0 } else { 0.0 },
             ..Default::default()
         };
