@@ -2,7 +2,7 @@ use bevy::{prelude::*, utils::HashMap};
 use dot_vox::{SceneNode, Frame};
 /*
 TODO:
-[ ] Can some of the textures be 16-bit unorm?
+[ ] 16 x 16 texture atlas
 */
 #[derive(Bundle)]
 pub struct VoxelSceneBundle {

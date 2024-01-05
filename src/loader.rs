@@ -133,10 +133,10 @@ impl VoxLoader {
         let has_metallic_roughness = has_varying_roughness || has_varying_metalness;
         let metallic_roughness_texture: Option<Handle<Image>> = if has_metallic_roughness {
             let raw: Vec<u8> = roughness.iter().zip(metalness.iter()).flat_map(|(rough, metal)| {
-                let output: Vec<u8> = [0.0, *rough, *metal, 0.0].iter().flat_map(|b| b.to_le_bytes()).collect();
+                let output: Vec<u8> = [0.0, *rough, *metal, 0.0].iter().flat_map(|b| ((b * u16::MAX as f32) as u16).to_le_bytes()).collect();
                 output
             }).collect();
-            let image = Image::new(Extent3d { width: 256, height: 1, depth_or_array_layers: 1 }, TextureDimension::D2, raw, TextureFormat::Rgba32Float);
+            let image = Image::new(Extent3d { width: 256, height: 1, depth_or_array_layers: 1 }, TextureDimension::D2, raw, TextureFormat::Rgba16Unorm);
             let handle = load_context.add_labeled_asset("material_metallic_roughness".to_string(), image);
             Some(handle)
         } else {
@@ -148,9 +148,9 @@ impl VoxLoader {
         let has_transparency = !transparency_data.iter().flatten().cloned().collect::<Vec<f32>>().is_empty();
         let specular_transmission_texture: Option<Handle<Image>> = if has_transparency {
             let raw: Vec<u8> = transparency_data.iter().flat_map(|t| {
-                t.unwrap_or(0.0).to_le_bytes()
+                ((t.unwrap_or(0.0) * u16::MAX as f32) as u16).to_le_bytes()
             }).collect();
-            let image = Image::new(Extent3d { width: 256, height: 1, depth_or_array_layers: 1 }, TextureDimension::D2, raw, TextureFormat::R32Float);
+            let image = Image::new(Extent3d { width: 256, height: 1, depth_or_array_layers: 1 }, TextureDimension::D2, raw, TextureFormat::R16Unorm);
             let handle = load_context.add_labeled_asset("material_specular_transmission".to_string(), image);
             Some(handle)
         } else {
