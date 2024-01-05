@@ -160,7 +160,7 @@ impl VoxLoader {
         let iors: Vec<f32> = file.materials.iter().map(|m| m.refractive_index() ).flatten().collect();
         let average_ior = if iors.len() > 0 { 1.0 + (iors.iter().cloned().reduce(|acc, e| acc + e).unwrap_or(0.0) / iors.len() as f32) } else { 0.0 };
         let translucent_voxel_indices: Vec<u8> = file.materials.iter().enumerate().filter_map(|(i, val)| if val.opacity().is_some() { Some(i as u8) } else { None }).collect();
-
+        
         // Material
         let material = StandardMaterial {
             base_color_texture: Some(color_handle),
@@ -177,21 +177,21 @@ impl VoxLoader {
         };
         let material_handle = load_context.add_labeled_asset("material".to_string(), material);
         
-        if let Some(root) = voxel_scene::parse_scene_graph(&file.scenes, &file.scenes[0], None, load_context) {
-            //println!("graph {:#?}", root);
-            let scene = VoxelScene { 
-                root, 
-                material: material_handle,
-                layers: file.layers.iter().map(|layer| LayerInfo { name: layer.name(), is_hidden: layer.hidden() }).collect(), 
-            };
-            load_context.add_labeled_asset("Scene".to_string(), scene);
-        }
+        let root = voxel_scene::parse_xform_node(&file.scenes, &file.scenes[0], load_context);
+        //println!("graph {:#?}", root);
+        let scene = VoxelScene { 
+            root, 
+            material: material_handle,
+            layers: file.layers.iter().map(|layer| LayerInfo { name: layer.name(), is_hidden: layer.hidden() }).collect(), 
+        };
+        load_context.add_labeled_asset("Scene".to_string(), scene);
+        
         // Models
         let named_models = parse_scene_graph(&file.scenes, &file.scenes[0], &None);
         let mut default_mesh: Option<Mesh> = None;
         for NamedModel { name, id } in named_models {
             let Some(model) = file.models.get(id as usize) else { continue };
-            let (shape, buffer) = crate::voxel::load_from_model(model, &translucent_voxel_indices);
+            let (shape, buffer, has_translucency) = crate::voxel::load_from_model(model, &translucent_voxel_indices);
             let mesh =
             crate::mesh::mesh_model(shape, &buffer,  &self.config);
             if id == 0 {

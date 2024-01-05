@@ -30,17 +30,20 @@ impl MergeVoxel for Voxel {
     }
 }
 
-pub(crate) fn load_from_model(model: &Model, translucent_voxel_indices: &Vec<u8>) -> (RuntimeShape<u32, 3>, Vec<Voxel>) {
+pub(crate) fn load_from_model(model: &Model, translucent_voxel_indices: &Vec<u8>) -> (RuntimeShape<u32, 3>, Vec<Voxel>, bool) {
     let model_shape =
     RuntimeShape::<u32, 3>::new([model.size.x + 2, model.size.z + 2, model.size.y + 2]);
     let mut data = vec![EMPTY_VOXEL; model_shape.size() as usize];
-    
+    let mut has_translucency = false;
+
     model.voxels.iter().for_each(|voxel| {
         let index =
         model_shape.linearize([model.size.x - voxel.x as u32, voxel.z as u32 + 1, voxel.y as u32 + 1])
         as usize;
-        data[index] = Voxel { index: voxel.i, is_translucent: translucent_voxel_indices.contains(&voxel.i) };
+        let is_translucent = translucent_voxel_indices.contains(&voxel.i);
+        data[index] = Voxel { index: voxel.i, is_translucent };
+        if is_translucent { has_translucency = true };
     });
     
-    (model_shape, data)
+    (model_shape, data, has_translucency)
 }

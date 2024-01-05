@@ -98,12 +98,11 @@ fn spawn_voxel_node_recursive(
     });
 }
 
-pub fn parse_scene_graph(
+pub fn parse_xform_node(
     graph: &Vec<SceneNode>,
     scene_node: &SceneNode,
-    partial_node: Option<&mut VoxelNode>,
     load_context: &mut LoadContext,
-) -> Option<VoxelNode> {
+) -> VoxelNode {
     match scene_node {
         SceneNode::Transform { attributes, frames, child, layer_id } => {
             let mut vox_node = VoxelNode {
@@ -114,20 +113,28 @@ pub fn parse_scene_graph(
                 is_hidden: parse_bool(attributes.get("_hidden").cloned()),
                 layer_id: *layer_id,
             };
-            parse_scene_graph(graph, &graph[*child as usize], Some(&mut vox_node), load_context);
-            Some(vox_node)                             
+            parse_xform_child(graph, &graph[*child as usize], &mut vox_node, load_context);
+            vox_node                        
         }
+        SceneNode::Group { .. } | SceneNode:: Shape { .. } => { panic!("expected Transform node") }
+    }
+}
+
+fn parse_xform_child(
+    graph: &Vec<SceneNode>,
+    scene_node: &SceneNode,
+    partial_node: &mut VoxelNode,
+    load_context: &mut LoadContext,
+) {
+    match scene_node {
+        SceneNode::Transform { .. } => { panic!("expected Group or Shape node") }
         SceneNode::Group { attributes: _, children } => {
-            let Some(partial) = partial_node else { panic!("Group with no parent transform") };
-            partial.children = children.iter().flat_map(|child| {
-                parse_scene_graph(graph, &graph[*child as usize], None, load_context)
+            partial_node.children = children.iter().map(|child| {
+                parse_xform_node(graph, &graph[*child as usize], load_context)
             }).collect();
-            None
         }
         SceneNode::Shape { attributes: _, models } => {
-            let Some(partial) = partial_node else { panic!("Shape with no parent transform") };
-            partial.model = Some(load_context.get_label_handle(partial.name.to_owned().unwrap_or(format!("model{}", models[0].model_id))));
-            None
+            partial_node.model = Some(load_context.get_label_handle(partial_node.name.to_owned().unwrap_or(format!("model{}", models[0].model_id))));
         }
     }
 }
