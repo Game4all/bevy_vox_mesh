@@ -3,7 +3,7 @@ use anyhow::{anyhow, Context};
 use bevy::{
     asset::{io::Reader, AssetLoader, AsyncReadExt, LoadContext, Handle},
     render::{mesh::Mesh, texture::Image, render_resource::{Extent3d, TextureDimension, TextureFormat}, color::Color},
-    utils::BoxedFuture, pbr::{StandardMaterial, AlphaMode}, math::Mat4,
+    utils::{BoxedFuture, hashbrown::HashMap}, pbr::{StandardMaterial, AlphaMode}, math::Mat4,
 };
 use serde::{Deserialize, Serialize};
 use block_mesh::QuadCoordinateConfig;
@@ -177,7 +177,8 @@ impl VoxLoader {
         };
         let material_handle = load_context.add_labeled_asset("material".to_string(), material);
         
-        let root = voxel_scene::parse_xform_node(&file.scenes, &file.scenes[0], load_context);
+        let mut shape_names = HashMap::new();
+        let root = voxel_scene::parse_xform_node(&file.scenes, &file.scenes[0], &mut shape_names, load_context);
         //println!("graph {:#?}", root);
         let scene = VoxelScene { 
             root, 
@@ -187,9 +188,9 @@ impl VoxLoader {
         load_context.add_labeled_asset("Scene".to_string(), scene);
         
         // Models
-        let named_models = parse_scene_graph(&file.scenes, &file.scenes[0], &None);
+        
         let mut default_mesh: Option<Mesh> = None;
-        for NamedModel { name, id } in named_models {
+        for (id, name) in shape_names {
             let Some(model) = file.models.get(id as usize) else { continue };
             let (shape, buffer, has_translucency) = crate::voxel::load_from_model(model, &translucent_voxel_indices);
             let mesh =
@@ -200,33 +201,5 @@ impl VoxLoader {
             load_context.add_labeled_asset(name, mesh);
         }     
         Ok(default_mesh.context("No models found in vox file")?)
-    }
-}
-
-struct NamedModel {
-    name: String,
-    id: u32,
-}
-
-fn parse_scene_graph(
-    graph: &Vec<SceneNode>,
-    node: &SceneNode,
-    node_name: &Option<&String>,
-) -> Vec<NamedModel> {
-    match node {
-        SceneNode::Transform { attributes, frames: _, child, layer_id: _ } => {
-            parse_scene_graph(graph, &graph[*child as usize], &attributes.get("_name"))
-        }
-        SceneNode::Group { attributes: _, children } => {
-            children.iter().flat_map(|child| {
-                parse_scene_graph(graph, &graph[*child as usize], node_name)
-            }).collect()
-        }
-        SceneNode::Shape { attributes: _, models } => {
-            models.iter().map(|model| {
-                let handle = if let Some(name) = node_name { name.to_string() } else { format!("model{}", model.model_id) };
-                NamedModel { name: handle, id: model.model_id }
-            }).collect()
-        }
     }
 }

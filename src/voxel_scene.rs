@@ -1,14 +1,11 @@
-use bevy::{prelude::*, asset::LoadContext};//use bevy::{asset::{Handle, LoadContext}, pbr::{StandardMaterial, PbrBundle}, render::mesh::Mesh, math::{Mat4, Mat3, Vec3, Vec4}, ecs::{system::{Commands, Query}, entity::Entity, query::Added, component::Component}, transform::components::Transform, core::Name};
+use bevy::{prelude::*, asset::LoadContext, utils::HashMap};//use bevy::{asset::{Handle, LoadContext}, pbr::{StandardMaterial, PbrBundle}, render::mesh::Mesh, math::{Mat4, Mat3, Vec3, Vec4}, ecs::{system::{Commands, Query}, entity::Entity, query::Added, component::Component}, transform::components::Transform, core::Name};
 use dot_vox::{SceneNode, Frame};
 /*
 TODO:
 [ ] only use transmissive texture for models that contain translucent voxels
 [ ] Can some of the textures be 16-bit unorm?
-[ ] Named models -> only parse tree once
-[ ] Named models -> disambiguate names
-[ ] Named models -> use a map to modelId to handle references
 [ ] Make VoxelScene the defaul asset returned
- */
+*/
 #[derive(Bundle)]
 pub struct VoxelSceneBundle {
     pub scene: Handle<VoxelScene>,
@@ -77,7 +74,7 @@ fn spawn_voxel_node_recursive(
     } else {
         entity_commands.insert(SpatialBundle::default());
     }
-
+    
     if let Some(layer_info) = scene.layers.get(voxel_node.layer_id as usize) {
         entity_commands.insert((
             VoxelLayer {
@@ -101,6 +98,7 @@ fn spawn_voxel_node_recursive(
 pub fn parse_xform_node(
     graph: &Vec<SceneNode>,
     scene_node: &SceneNode,
+    shape_names: &mut HashMap<u32, String>,
     load_context: &mut LoadContext,
 ) -> VoxelNode {
     match scene_node {
@@ -113,7 +111,7 @@ pub fn parse_xform_node(
                 is_hidden: parse_bool(attributes.get("_hidden").cloned()),
                 layer_id: *layer_id,
             };
-            parse_xform_child(graph, &graph[*child as usize], &mut vox_node, load_context);
+            parse_xform_child(graph, &graph[*child as usize], &mut vox_node, shape_names, load_context);
             vox_node                        
         }
         SceneNode::Group { .. } | SceneNode:: Shape { .. } => { panic!("expected Transform node") }
@@ -124,17 +122,37 @@ fn parse_xform_child(
     graph: &Vec<SceneNode>,
     scene_node: &SceneNode,
     partial_node: &mut VoxelNode,
+    shape_names: &mut HashMap<u32, String>,
     load_context: &mut LoadContext,
 ) {
     match scene_node {
         SceneNode::Transform { .. } => { panic!("expected Group or Shape node") }
         SceneNode::Group { attributes: _, children } => {
             partial_node.children = children.iter().map(|child| {
-                parse_xform_node(graph, &graph[*child as usize], load_context)
+                parse_xform_node(graph, &graph[*child as usize], shape_names, load_context)
             }).collect();
         }
         SceneNode::Shape { attributes: _, models } => {
-            partial_node.model = Some(load_context.get_label_handle(partial_node.name.to_owned().unwrap_or(format!("model{}", models[0].model_id))));
+            let label: String;
+            let model_id = models[0].model_id;
+            if let Some(existing_name) = shape_names.get(&model_id) {
+                // existing shape, ignore name of parent xform
+                label = existing_name.to_string();
+            } else if let Some(parent_name) = &partial_node.name {
+                if shape_names.iter().filter_map(|(_, value)| {
+                    if value == parent_name { Some(value) } else { None }
+                } ).collect::<Vec<&String>>().len() == 0 {
+                    label = parent_name.to_string();
+                } else {
+                    // disambiguate name by appending model id
+                    label = format!("{}-{}", parent_name, model_id);
+                }
+                shape_names.insert(model_id, label.to_string());
+            } else {
+                label = format!("model-{}", model_id);
+                shape_names.insert(model_id, label.to_string());
+            }
+            partial_node.model = Some(load_context.get_label_handle(label));
         }
     }
 }
