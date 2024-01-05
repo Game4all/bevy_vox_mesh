@@ -1,9 +1,6 @@
 use bevy::{prelude::*, utils::HashMap};
 use dot_vox::{SceneNode, Frame};
-/*
-TODO:
-[ ] 16 x 16 texture atlas
-*/
+
 #[derive(Bundle)]
 pub struct VoxelSceneBundle {
     pub scene: Handle<VoxelScene>,

@@ -83,7 +83,7 @@ impl VoxLoader {
             let rgba: [u8; 4] = c.into(); 
             rgba
         }).collect();
-        let color_image = Image::new(Extent3d { width: 256, height: 1, depth_or_array_layers: 1 }, TextureDimension::D2, color_data, TextureFormat::Rgba8Unorm);
+        let color_image = Image::new(Extent3d { width: 16, height: 16, depth_or_array_layers: 1 }, TextureDimension::D2, color_data, TextureFormat::Rgba8Unorm);
         let color_handle = load_context.add_labeled_asset("material_base_color".to_string(), color_image);
         
         // Emissive
@@ -111,7 +111,7 @@ impl VoxLoader {
                     output
                 }
             }).collect();
-            let emissive_image = Image::new(Extent3d { width: 256, height: 1, depth_or_array_layers: 1 }, TextureDimension::D2, emissive_raw, TextureFormat::Rgba32Float);
+            let emissive_image = Image::new(Extent3d { width: 16, height: 16, depth_or_array_layers: 1 }, TextureDimension::D2, emissive_raw, TextureFormat::Rgba32Float);
             let emissive_handle = load_context.add_labeled_asset("material_emission".to_string(), emissive_image);
             Some(emissive_handle)
         } else {
@@ -136,7 +136,7 @@ impl VoxLoader {
                 let output: Vec<u8> = [0.0, *rough, *metal, 0.0].iter().flat_map(|b| ((b * u16::MAX as f32) as u16).to_le_bytes()).collect();
                 output
             }).collect();
-            let image = Image::new(Extent3d { width: 256, height: 1, depth_or_array_layers: 1 }, TextureDimension::D2, raw, TextureFormat::Rgba16Unorm);
+            let image = Image::new(Extent3d { width: 16, height: 16, depth_or_array_layers: 1 }, TextureDimension::D2, raw, TextureFormat::Rgba16Unorm);
             let handle = load_context.add_labeled_asset("material_metallic_roughness".to_string(), image);
             Some(handle)
         } else {
@@ -150,7 +150,7 @@ impl VoxLoader {
             let raw: Vec<u8> = transparency_data.iter().flat_map(|t| {
                 ((t.unwrap_or(0.0) * u16::MAX as f32) as u16).to_le_bytes()
             }).collect();
-            let image = Image::new(Extent3d { width: 256, height: 1, depth_or_array_layers: 1 }, TextureDimension::D2, raw, TextureFormat::R16Unorm);
+            let image = Image::new(Extent3d { width: 16, height: 16, depth_or_array_layers: 1 }, TextureDimension::D2, raw, TextureFormat::R16Unorm);
             let handle = load_context.add_labeled_asset("material_specular_transmission".to_string(), image);
             Some(handle)
         } else {

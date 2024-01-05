@@ -55,8 +55,9 @@ pub(crate) fn mesh_model(
                         ]
                     }), // move center of the mesh center
             );
-            let u = (palette_index as f32 + 0.5) / 256.0;
-            uvs.extend_from_slice(&[[u, 0.5], [u, 0.5], [u, 0.5], [u, 0.5]]);
+            let u = ((palette_index % 16) as f32 + 0.5) / 16.0;
+            let v = ((palette_index / 16) as f32 + 0.5) / 16.0;
+            uvs.extend_from_slice(&[[u, v], [u, v], [u, v], [u, v]]);
             normals.extend_from_slice(&face.quad_mesh_normals());
         }
     }
