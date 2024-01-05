@@ -1,16 +1,15 @@
 
-use anyhow::{anyhow, Context};
+use anyhow::anyhow;
 use bevy::{
     asset::{io::Reader, AssetLoader, AsyncReadExt, LoadContext, Handle},
-    render::{mesh::Mesh, texture::Image, render_resource::{Extent3d, TextureDimension, TextureFormat}, color::Color},
-    utils::{BoxedFuture, hashbrown::HashMap}, pbr::{StandardMaterial, AlphaMode}, math::Mat4,
+    render::{texture::Image, render_resource::{Extent3d, TextureDimension, TextureFormat}, color::Color},
+    utils::{BoxedFuture, hashbrown::HashMap}, pbr::StandardMaterial,
 };
 use serde::{Deserialize, Serialize};
 use block_mesh::QuadCoordinateConfig;
-use dot_vox::SceneNode;
 use thiserror::Error;
 
-use crate::voxel_scene::{self, VoxelScene, VoxelLayer, LayerInfo, VoxelModel};
+use crate::voxel_scene::{self, VoxelScene, LayerInfo, VoxelModel};
 
 /// An asset loader capable of loading models in `.vox` files as usable [`bevy::render::mesh::Mesh`]es.
 ///
@@ -42,7 +41,7 @@ pub enum VoxLoaderError {
 }
 
 impl AssetLoader for VoxLoader {
-    type Asset = Mesh;
+    type Asset = VoxelScene;
     type Settings = VoxLoaderSettings;
     type Error = VoxLoaderError;
     
@@ -73,7 +72,7 @@ impl VoxLoader {
         bytes: &'a [u8],
         load_context: &'a mut LoadContext,
         settings: &'a VoxLoaderSettings,
-    ) -> Result<Mesh, VoxLoaderError> {
+    ) -> Result<VoxelScene, VoxLoaderError> {
         let file = match dot_vox::load_bytes(bytes) {
             Ok(data) => data,
             Err(error) => return Err(VoxLoaderError::InvalidAsset(anyhow!(error))),
@@ -199,23 +198,16 @@ impl VoxLoader {
         };
         
         // Models
-        let mut default_mesh: Option<Mesh> = None;
         for (id, name) in shape_names {
             let Some(model) = file.models.get(id as usize) else { continue };
-            let (shape, buffer, has_translucenct_voxels) = crate::voxel::load_from_model(model, &translucent_voxel_indices);
-            let mesh =
-            crate::mesh::mesh_model(shape, &buffer,  &self.config);
-            if id == 0 {
-                default_mesh = Some(mesh.clone());
-            }
+            let (shape, buffer, has_translucent_voxels) = crate::voxel::load_from_model(model, &translucent_voxel_indices);
+            let mesh = crate::mesh::mesh_model(shape, &buffer,  &self.config);
             let mesh_handle = load_context.add_labeled_asset(name.clone(), mesh);
             scene.models.insert(name, VoxelModel { 
                 mesh: mesh_handle, 
-                material: if has_translucenct_voxels { translucent_material_handle.clone() } else { opaque_material_handle.clone() },
+                material: if has_translucent_voxels { translucent_material_handle.clone() } else { opaque_material_handle.clone() },
             });
         }
-        load_context.add_labeled_asset("Scene".to_string(), scene);
-
-        Ok(default_mesh.context("No models found in vox file")?)
+        Ok(scene)
     }
 }

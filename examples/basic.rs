@@ -77,7 +77,7 @@ fn setup(
     //     });
 
         commands.spawn(VoxelSceneBundle {
-            scene: assets.load("shapes.vox#Scene"),
+            scene: assets.load("shapes.vox"),
             transform: Transform::from_scale(Vec3::splat(0.05)),
         });
         // commands.spawn(SpatialBundle {

@@ -1,9 +1,8 @@
-use bevy::{prelude::*, asset::LoadContext, utils::HashMap};//use bevy::{asset::{Handle, LoadContext}, pbr::{StandardMaterial, PbrBundle}, render::mesh::Mesh, math::{Mat4, Mat3, Vec3, Vec4}, ecs::{system::{Commands, Query}, entity::Entity, query::Added, component::Component}, transform::components::Transform, core::Name};
+use bevy::{prelude::*, utils::HashMap};
 use dot_vox::{SceneNode, Frame};
 /*
 TODO:
 [ ] Can some of the textures be 16-bit unorm?
-[ ] Make VoxelScene the defaul asset returned
 */
 #[derive(Bundle)]
 pub struct VoxelSceneBundle {

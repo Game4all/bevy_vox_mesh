@@ -23,7 +23,7 @@ use bevy::{
     app::{App, Plugin, Update},
     asset::AssetApp,
 };
-use block_mesh::{QuadCoordinateConfig, RIGHT_HANDED_Y_UP_CONFIG, OrientedBlockFace, AxisPermutation, Axis};
+use block_mesh::{QuadCoordinateConfig, RIGHT_HANDED_Y_UP_CONFIG};
 
 mod loader;
 mod voxel_scene;
