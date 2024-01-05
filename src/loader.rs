@@ -10,7 +10,7 @@ use block_mesh::QuadCoordinateConfig;
 use dot_vox::SceneNode;
 use thiserror::Error;
 
-use crate::voxel_scene::{self, VoxelScene, VoxelLayer, LayerInfo};
+use crate::voxel_scene::{self, VoxelScene, VoxelLayer, LayerInfo, VoxelModel};
 
 /// An asset loader capable of loading models in `.vox` files as usable [`bevy::render::mesh::Mesh`]es.
 ///
@@ -162,44 +162,60 @@ impl VoxLoader {
         let translucent_voxel_indices: Vec<u8> = file.materials.iter().enumerate().filter_map(|(i, val)| if val.opacity().is_some() { Some(i as u8) } else { None }).collect();
         
         // Material
-        let material = StandardMaterial {
-            base_color_texture: Some(color_handle),
+        let translucent_material = StandardMaterial {
+            base_color_texture: Some(color_handle.clone()),
             emissive: if has_emissive { Color::WHITE * settings.emission_strength } else { Color::BLACK },
-            emissive_texture,
+            emissive_texture: emissive_texture.clone(),
             perceptual_roughness: if has_metallic_roughness { 1.0 } else { max_roughness },
             metallic: if has_metallic_roughness { 1.0 } else { max_metalness },
-            metallic_roughness_texture,
+            metallic_roughness_texture: metallic_roughness_texture.clone(),
             specular_transmission: if has_transparency { 1.0 } else { 0.0 },
             specular_transmission_texture: specular_transmission_texture,
             ior: average_ior,
             thickness: if has_transparency { 4.0 } else { 0.0 },
             ..Default::default()
         };
-        let material_handle = load_context.add_labeled_asset("material".to_string(), material);
-        
+        let opaque_material = StandardMaterial {
+            base_color_texture: Some(color_handle),
+            emissive: if has_emissive { Color::WHITE * settings.emission_strength } else { Color::BLACK },
+            emissive_texture,
+            perceptual_roughness: if has_metallic_roughness { 1.0 } else { max_roughness },
+            metallic: if has_metallic_roughness { 1.0 } else { max_metalness },
+            metallic_roughness_texture,
+            ..Default::default()
+        };
+        let translucent_material_handle = load_context.add_labeled_asset("material_translucent".to_string(), translucent_material);
+        let opaque_material_handle = load_context.add_labeled_asset("material_opaque".to_string(), opaque_material);
+
+        // Scene graph
+
         let mut shape_names = HashMap::new();
-        let root = voxel_scene::parse_xform_node(&file.scenes, &file.scenes[0], &mut shape_names, load_context);
+        let root = voxel_scene::parse_xform_node(&file.scenes, &file.scenes[0], &mut shape_names);
         //println!("graph {:#?}", root);
-        let scene = VoxelScene { 
+        let mut scene = VoxelScene { 
             root, 
-            material: material_handle,
+            models: HashMap::new(),
             layers: file.layers.iter().map(|layer| LayerInfo { name: layer.name(), is_hidden: layer.hidden() }).collect(), 
         };
-        load_context.add_labeled_asset("Scene".to_string(), scene);
         
         // Models
-        
         let mut default_mesh: Option<Mesh> = None;
         for (id, name) in shape_names {
             let Some(model) = file.models.get(id as usize) else { continue };
-            let (shape, buffer, has_translucency) = crate::voxel::load_from_model(model, &translucent_voxel_indices);
+            let (shape, buffer, has_translucenct_voxels) = crate::voxel::load_from_model(model, &translucent_voxel_indices);
             let mesh =
             crate::mesh::mesh_model(shape, &buffer,  &self.config);
             if id == 0 {
                 default_mesh = Some(mesh.clone());
             }
-            load_context.add_labeled_asset(name, mesh);
-        }     
+            let mesh_handle = load_context.add_labeled_asset(name.clone(), mesh);
+            scene.models.insert(name, VoxelModel { 
+                mesh: mesh_handle, 
+                material: if has_translucenct_voxels { translucent_material_handle.clone() } else { opaque_material_handle.clone() },
+            });
+        }
+        load_context.add_labeled_asset("Scene".to_string(), scene);
+
         Ok(default_mesh.context("No models found in vox file")?)
     }
 }

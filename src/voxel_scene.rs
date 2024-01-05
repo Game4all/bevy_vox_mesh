@@ -2,7 +2,6 @@ use bevy::{prelude::*, asset::LoadContext, utils::HashMap};//use bevy::{asset::{
 use dot_vox::{SceneNode, Frame};
 /*
 TODO:
-[ ] only use transmissive texture for models that contain translucent voxels
 [ ] Can some of the textures be 16-bit unorm?
 [ ] Make VoxelScene the defaul asset returned
 */
@@ -15,7 +14,7 @@ pub struct VoxelSceneBundle {
 #[derive(Asset, TypePath)]
 pub struct VoxelScene {
     pub root: VoxelNode,
-    pub material: Handle<StandardMaterial>,
+    pub models: HashMap<String, VoxelModel>,
     pub layers: Vec<LayerInfo>,
 }
 
@@ -29,9 +28,15 @@ pub struct VoxelNode {
     name: Option<String>,
     transform: Mat4,
     children: Vec<VoxelNode>,
-    model: Option<Handle<Mesh>>,
+    model_label: Option<String>,
     is_hidden: bool,
     layer_id: u32,
+}
+
+#[derive(Debug)]
+pub struct VoxelModel {
+    pub mesh: Handle<Mesh>,
+    pub material: Handle<StandardMaterial>,
 }
 
 #[derive(Component, Clone)]
@@ -65,10 +70,11 @@ fn spawn_voxel_node_recursive(
     if let Some(name) = &voxel_node.name {
         entity_commands.insert(Name::new(name.clone()));
     }
-    if let Some(model) = &voxel_node.model {
+    if let Some(label) = &voxel_node.model_label {
+        let Some(model) = scene.models.get(label) else { panic!("Model not found") };
         entity_commands.insert(PbrBundle {
-            mesh: model.clone(),
-            material: scene.material.clone(),
+            mesh: model.mesh.clone(),
+            material: model.material.clone(),
             ..default()
         });
     } else {
@@ -99,7 +105,6 @@ pub fn parse_xform_node(
     graph: &Vec<SceneNode>,
     scene_node: &SceneNode,
     shape_names: &mut HashMap<u32, String>,
-    load_context: &mut LoadContext,
 ) -> VoxelNode {
     match scene_node {
         SceneNode::Transform { attributes, frames, child, layer_id } => {
@@ -107,11 +112,11 @@ pub fn parse_xform_node(
                 name: attributes.get("_name").cloned(),
                 transform: transform_from_frame(&frames[0]),
                 children: vec![],
-                model: None,
+                model_label: None,
                 is_hidden: parse_bool(attributes.get("_hidden").cloned()),
                 layer_id: *layer_id,
             };
-            parse_xform_child(graph, &graph[*child as usize], &mut vox_node, shape_names, load_context);
+            parse_xform_child(graph, &graph[*child as usize], &mut vox_node, shape_names);
             vox_node                        
         }
         SceneNode::Group { .. } | SceneNode:: Shape { .. } => { panic!("expected Transform node") }
@@ -123,13 +128,12 @@ fn parse_xform_child(
     scene_node: &SceneNode,
     partial_node: &mut VoxelNode,
     shape_names: &mut HashMap<u32, String>,
-    load_context: &mut LoadContext,
 ) {
     match scene_node {
         SceneNode::Transform { .. } => { panic!("expected Group or Shape node") }
         SceneNode::Group { attributes: _, children } => {
             partial_node.children = children.iter().map(|child| {
-                parse_xform_node(graph, &graph[*child as usize], shape_names, load_context)
+                parse_xform_node(graph, &graph[*child as usize], shape_names)
             }).collect();
         }
         SceneNode::Shape { attributes: _, models } => {
@@ -152,7 +156,7 @@ fn parse_xform_child(
                 label = format!("model-{}", model_id);
                 shape_names.insert(model_id, label.to_string());
             }
-            partial_node.model = Some(load_context.get_label_handle(label));
+            partial_node.model_label = Some(label);
         }
     }
 }

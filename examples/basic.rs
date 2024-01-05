@@ -37,7 +37,7 @@ fn setup(
             },
             camera_3d: Camera3d {
                 screen_space_specular_transmission_quality: ScreenSpaceTransmissionQuality::High,
-                screen_space_specular_transmission_steps: 2,
+                screen_space_specular_transmission_steps: 1,
                 ..default()
             },
             transform: Transform::from_xyz(0.0, 1.5, 8.0).looking_at(Vec3::ZERO, Vec3::Y),
