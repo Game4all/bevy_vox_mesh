@@ -2,7 +2,7 @@ use bevy::render::{
     mesh::{Indices, Mesh, VertexAttributeValues},
     render_resource::PrimitiveTopology,
 };
-use block_mesh::{greedy_quads, GreedyQuadsBuffer, QuadCoordinateConfig};
+use block_mesh::{greedy_quads, GreedyQuadsBuffer, RIGHT_HANDED_Y_UP_CONFIG};
 use ndshape::{RuntimeShape, Shape};
 
 use crate::voxel::Voxel;
@@ -10,10 +10,9 @@ use crate::voxel::Voxel;
 pub(crate) fn mesh_model(
     buffer_shape: RuntimeShape<u32, 3>,
     buffer: &[Voxel],
-    quads_config: &QuadCoordinateConfig,
 ) -> Mesh {
     let mut greedy_quads_buffer = GreedyQuadsBuffer::new(buffer_shape.size() as usize);
-
+    let quads_config = RIGHT_HANDED_Y_UP_CONFIG;
     greedy_quads(
         buffer,
         &buffer_shape,
