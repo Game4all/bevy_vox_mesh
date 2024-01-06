@@ -86,6 +86,11 @@ fn setup(
 
 Take a look in the `examples/` directory for a complete working example.
 
+## Limitations
+
+- Positioning of models can be off if they have empty space around them. Fix this by tapping the "Fit model size" button in Magica Voxel.
+- If you have a concave model that contains glass voxels, the other parts of that model will not be visible through the glass voxels. This is a limitation of Bevy's screen-space specular transmission system. To work around this limitation, use the Magica Voxel world editor to break up models that contain glass elements into separate models that are each convex.
+
 ## Acknowledgements
 
 This asset loader is powered by the awesome [`block-mesh-rs`](https://github.com/bonsairobo/block-mesh-rs) crate.

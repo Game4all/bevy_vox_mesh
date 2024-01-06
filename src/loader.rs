@@ -25,12 +25,17 @@ pub struct VoxLoader {
 
 #[derive(Serialize, Deserialize)]
 pub struct VoxLoaderSettings {
+    /// Multiplier for emissive strength. Defaults to 2.0.
     pub emission_strength: f32,
+    /// Defaults to `true` to more accurately reflect the colours in Magica Voxel.
+    pub uses_sRGB: bool,
+    /// Magica Voxel doesn't let you adjust the roughness for the default "diffuse" block type, so it can be adjusted with htis setting. Defaults to 0.5.
+    pub diffuse_roughness: f32,
 }
 
 impl Default for VoxLoaderSettings {
     fn default() -> Self {
-        Self { emission_strength: 2.0 }
+        Self { emission_strength: 2.0, uses_sRGB: true, diffuse_roughness: 0.5 }
     }
 }
 
@@ -83,7 +88,7 @@ impl VoxLoader {
             let rgba: [u8; 4] = c.into(); 
             rgba
         }).collect();
-        let color_image = Image::new(Extent3d { width: 16, height: 16, depth_or_array_layers: 1 }, TextureDimension::D2, color_data, TextureFormat::Rgba8Unorm);
+        let color_image = Image::new(Extent3d { width: 16, height: 16, depth_or_array_layers: 1 }, TextureDimension::D2, color_data, if settings.uses_sRGB { TextureFormat::Rgba8UnormSrgb } else { TextureFormat::Rgba8Unorm });
         let color_handle = load_context.add_labeled_asset("material_base_color".to_string(), color_image);
         
         // Emissive
@@ -120,16 +125,17 @@ impl VoxLoader {
         
         // Roughness/ Metalness
         let roughness: Vec<f32> = file.materials.iter().map(|m| {
+            if m.material_type() == Some("_diffuse") { return settings.diffuse_roughness };
             m.roughness().unwrap_or(0.0)
         }).collect();
         let max_roughness = roughness.iter().cloned().max_by(|a, b| a.partial_cmp(b).expect("tried to compare NaN")).unwrap();
-        let has_varying_roughness = max_roughness - roughness.iter().cloned().min_by(|a, b| a.partial_cmp(b).expect("tried to compare NaN")).unwrap() > 0.0;
+        let has_varying_roughness = max_roughness - roughness.iter().cloned().min_by(|a, b| a.partial_cmp(b).expect("tried to compare NaN")).unwrap() > 0.001;
         
         let metalness: Vec<f32> = file.materials.iter().map(|m| {
             m.metalness().unwrap_or(0.0)
         }).collect();
         let max_metalness = metalness.iter().cloned().max_by(|a, b| a.partial_cmp(b).expect("tried to compare NaN")).unwrap();
-        let has_varying_metalness = max_metalness - metalness.iter().cloned().min_by(|a, b| a.partial_cmp(b).expect("tried to compare NaN")).unwrap() > 0.0;
+        let has_varying_metalness = max_metalness - metalness.iter().cloned().min_by(|a, b| a.partial_cmp(b).expect("tried to compare NaN")).unwrap() > 0.001;
         let has_metallic_roughness = has_varying_roughness || has_varying_metalness;
         let metallic_roughness_texture: Option<Handle<Image>> = if has_metallic_roughness {
             let raw: Vec<u8> = roughness.iter().zip(metalness.iter()).flat_map(|(rough, metal)| {

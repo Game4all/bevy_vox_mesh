@@ -167,10 +167,13 @@ fn parse_bool(value: Option<String>) -> bool {
 
 fn transform_from_frame(frame: &Frame) -> Mat4 {
     let Some(position) = frame.position() else { return Mat4::IDENTITY };
-    let translation = [-position.x as f32, position.z as f32, position.y as f32, 1.0];
-    let Some(orientation) = frame.orientation() else { return Mat4::from_translation(Vec3::from_array(translation[0..3].try_into().expect("3 elemetns"))) };
-    let mat3 = Mat3::from_cols_array_2d(&orientation.to_cols_array_2d());   
-    let mut mat4 = Mat4::from_mat3(mat3);
-    mat4.w_axis = Vec4::from_array(translation);
-    mat4
+    let position = [-position.x as f32, position.z as f32, position.y as f32];
+    let translation = Mat4::from_translation(Vec3::from_array(position));
+    let rotation = if let Some(orientation) = frame.orientation() {
+        let mat3 = Mat3::from_cols_array_2d(&orientation.to_cols_array_2d());
+        Mat4::from_mat3(mat3)
+    } else {
+        Mat4::IDENTITY
+    };
+    translation * rotation
 }
