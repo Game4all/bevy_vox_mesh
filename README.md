@@ -2,6 +2,11 @@
 <code>bevy_vox_scene</code>
 </h1>
 
+
+<a href="https://crates.io/crates/bevy_vox_scene">
+<img height="24" src="https://img.shields.io/crates/v/bevy_vox_scene?style=for-the-badge"/>
+</a>
+
 A plugin for the bevy engine which allows loading magica voxel `.vox` files directly into usable meshes.
 `bevy_vox_scene` is forked from the excellent [`bevy_vox_mesh` crate](https://crates.io/crates/bevy_vox_mesh).
 
