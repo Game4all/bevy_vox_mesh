@@ -1,10 +1,10 @@
 [package]
-name = "bevy_vox_mesh"
-description = "A bevy engine plugin for loading magica voxel files directly in bevy as usable meshes."
+name = "bevy_vox_scene"
+description = "A bevy engine plugin for loading magica voxel world files directly in bevy as a scene graph of PbrBundles."
 license = "MIT"
-version = "0.8.0"
-repository = "https://github.com/Game4all/bevy_vox_mesh"
-authors = ["Lucas A. <game4allyt@gmail.com>"]
+version = "0.9.0"
+repository = "https://github.com/Utsira/bevy_vox_scene"
+authors = ["Oliver Dew <olidew@gmail.com>"]
 edition = "2021"
 exclude = ["assets/*"]
 
@@ -14,17 +14,16 @@ exclude = ["assets/*"]
 bevy = { version = "0.12.0", default-features = false, features = [
   "bevy_render",
   "bevy_asset",
+  "pbr_transmission_textures",
 ] }
-dot_vox = "4.1.0"
+dot_vox = "5.1.1"
 ndshape = "0.3.0"
 block-mesh = "0.2.0"
 ndcopy = "0.3.0"
 anyhow = "1.0.38"
 thiserror = "1.0.50"
+serde = "1.0.193"
 
 [dev-dependencies]
 bevy = { version = "0.12.0" }
-
-[[example]]
-name = "basic"
-path = "examples/basic.rs"
+bevy_panorbit_camera = "0.10.0"
