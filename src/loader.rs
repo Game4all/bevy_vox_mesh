@@ -23,7 +23,7 @@ pub struct VoxLoaderSettings {
     pub emission_strength: f32,
     /// Defaults to `true` to more accurately reflect the colours in Magica Voxel.
     pub uses_srgb: bool,
-    /// Magica Voxel doesn't let you adjust the roughness for the default "diffuse" block type, so it can be adjusted with htis setting. Defaults to 0.5.
+    /// Magica Voxel doesn't let you adjust the roughness for the default "diffuse" block type, so it can be adjusted with this setting. Defaults to 0.8.
     pub diffuse_roughness: f32,
 }
 
@@ -156,38 +156,29 @@ impl VoxSceneLoader {
         } else {
             None
         };
-        let iors: Vec<f32> = file.materials.iter().map(|m| m.refractive_index() ).flatten().collect();
-        let average_ior = if iors.len() > 0 { 1.0 + (iors.iter().cloned().reduce(|acc, e| acc + e).unwrap_or(0.0) / iors.len() as f32) } else { 0.0 };
-        let translucent_voxel_indices: Vec<u8> = file.materials.iter().enumerate().filter_map(|(i, val)| if val.opacity().is_some() { Some(i as u8) } else { None }).collect();
-        
+        let mut translucent_voxels: HashMap<u8, f32> = HashMap::new();
+        for (index, material) in file.materials.iter().enumerate() {
+            if material.opacity().is_some() {
+                if let Some(ior) = material.refractive_index() {
+                    translucent_voxels.insert(index as u8, ior);
+                }
+            }
+        }
+        print!("{:#?}",translucent_voxels);
         // Material
-        let translucent_material = StandardMaterial {
+        let opaque_material = StandardMaterial {
             base_color_texture: Some(color_handle.clone()),
             emissive: if has_emissive { Color::WHITE * settings.emission_strength } else { Color::BLACK },
             emissive_texture: emissive_texture.clone(),
             perceptual_roughness: if has_metallic_roughness { 1.0 } else { max_roughness },
             metallic: if has_metallic_roughness { 1.0 } else { max_metalness },
             metallic_roughness_texture: metallic_roughness_texture.clone(),
-            specular_transmission: if has_transparency { 1.0 } else { 0.0 },
-            specular_transmission_texture: specular_transmission_texture,
-            ior: average_ior,
-            thickness: if has_transparency { 12.0 } else { 0.0 },
             ..Default::default()
         };
-        let opaque_material = StandardMaterial {
-            base_color_texture: Some(color_handle),
-            emissive: if has_emissive { Color::WHITE * settings.emission_strength } else { Color::BLACK },
-            emissive_texture,
-            perceptual_roughness: if has_metallic_roughness { 1.0 } else { max_roughness },
-            metallic: if has_metallic_roughness { 1.0 } else { max_metalness },
-            metallic_roughness_texture,
-            ..Default::default()
-        };
-        let translucent_material_handle = load_context.add_labeled_asset("material_translucent".to_string(), translucent_material);
-        let opaque_material_handle = load_context.add_labeled_asset("material_opaque".to_string(), opaque_material);
-
+        let opaque_material_handle = load_context.add_labeled_asset("material".to_string(), opaque_material);
+        
         // Scene graph
-
+        
         let mut shape_names = HashMap::new();
         let root = voxel_scene::parse_xform_node(&file.scenes, &file.scenes[0], &mut shape_names);
         //println!("graph {:#?}", root);
@@ -200,12 +191,31 @@ impl VoxSceneLoader {
         // Models
         for (id, name) in shape_names {
             let Some(model) = file.models.get(id as usize) else { continue };
-            let (shape, buffer, has_translucent_voxels) = crate::voxel::load_from_model(model, &translucent_voxel_indices);
+            let (shape, buffer, refraction_indices) = crate::voxel::load_from_model(model, &translucent_voxels);
             let mesh = crate::mesh::mesh_model(shape, &buffer);
             let mesh_handle = load_context.add_labeled_asset(name.clone(), mesh);
+            let material: Handle<StandardMaterial> = if refraction_indices.is_empty() {
+                opaque_material_handle.clone()
+            } else {
+                let ior = 1.0 + (refraction_indices.iter().cloned().reduce(|acc, e| acc + e).unwrap_or(0.0) / refraction_indices.len() as f32);
+                let translucent_material = StandardMaterial {
+                    base_color_texture: Some(color_handle.clone()),
+                    emissive: if has_emissive { Color::WHITE * settings.emission_strength } else { Color::BLACK },
+                    emissive_texture: emissive_texture.clone(),
+                    perceptual_roughness: if has_metallic_roughness { 1.0 } else { max_roughness },
+                    metallic: if has_metallic_roughness { 1.0 } else { max_metalness },
+                    metallic_roughness_texture: metallic_roughness_texture.clone(),
+                    specular_transmission: 1.0,
+                    specular_transmission_texture: specular_transmission_texture.clone(),
+                    ior,
+                    thickness: model.size.x.min(model.size.y.min(model.size.z)) as f32,
+                    ..Default::default()
+                };
+                load_context.add_labeled_asset(format!("material-{}", name), translucent_material)
+            };
             scene.models.insert(name, VoxelModel { 
                 mesh: mesh_handle, 
-                material: if has_translucent_voxels { translucent_material_handle.clone() } else { opaque_material_handle.clone() },
+                material
             });
         }
         Ok(scene)

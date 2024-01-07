@@ -30,7 +30,7 @@ fn setup(
         // Load a single model using the name assigned to it in MagicaVoxel
         mesh: assets.load("study.vox#desk"),
         // This model has no glass voxels, so we can use the opaque material
-        material: assets.load("study.vox#material_opaque"),
+        material: assets.load("study.vox#material"),
         ..Default::default()
     });
 }
