@@ -164,7 +164,7 @@ impl VoxSceneLoader {
                 }
             }
         }
-        print!("{:#?}",translucent_voxels);
+
         // Material
         let opaque_material = StandardMaterial {
             base_color_texture: Some(color_handle.clone()),
