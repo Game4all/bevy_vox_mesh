@@ -29,7 +29,7 @@ pub struct VoxLoaderSettings {
 
 impl Default for VoxLoaderSettings {
     fn default() -> Self {
-        Self { emission_strength: 2.0, uses_srgb: true, diffuse_roughness: 0.5 }
+        Self { emission_strength: 2.0, uses_srgb: true, diffuse_roughness: 0.8 }
     }
 }
 
@@ -171,7 +171,7 @@ impl VoxSceneLoader {
             specular_transmission: if has_transparency { 1.0 } else { 0.0 },
             specular_transmission_texture: specular_transmission_texture,
             ior: average_ior,
-            thickness: if has_transparency { 4.0 } else { 0.0 },
+            thickness: if has_transparency { 12.0 } else { 0.0 },
             ..Default::default()
         };
         let opaque_material = StandardMaterial {

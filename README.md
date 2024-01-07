@@ -44,7 +44,8 @@ Which crate you should use depends on your use-case, and the look you're going f
 
 ## Usage
 
-![demo screenshot](https://raw.githubusercontent.com/Game4all/bevy_vox_mesh/master/assets/screenshot.PNG)
+![The study scene rendered in Magica Voxel](assets/studyMV.jpg)
+![The same scene in Bevy](assets/study-bevy.jpg)
 
 ```rust
 
