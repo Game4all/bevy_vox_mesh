@@ -1,4 +1,4 @@
-use bevy::{prelude::*, utils::HashMap};
+use bevy::{ecs::{bundle::Bundle, component::Component, system::{Commands, Query, Res}, entity::Entity}, asset::{Handle, Asset, Assets}, transform::components::Transform, reflect::TypePath, math::{Mat4, Vec3, Mat3}, render::{mesh::Mesh, view::Visibility, prelude::SpatialBundle}, pbr::{StandardMaterial, PbrBundle}, core::Name, hierarchy::BuildChildren};
 use dot_vox::{SceneNode, Frame};
 
 #[derive(Bundle)]
@@ -10,7 +10,7 @@ pub struct VoxelSceneBundle {
 #[derive(Asset, TypePath)]
 pub struct VoxelScene {
     pub root: VoxelNode,
-    pub models: HashMap<String, VoxelModel>,
+    pub models: Vec<VoxelModel>,
     pub layers: Vec<LayerInfo>,
 }
 
@@ -24,7 +24,7 @@ pub struct VoxelNode {
     name: Option<String>,
     transform: Mat4,
     children: Vec<VoxelNode>,
-    model_label: Option<String>,
+    model_id: Option<usize>,
     is_hidden: bool,
     layer_id: u32,
 }
@@ -66,12 +66,12 @@ fn spawn_voxel_node_recursive(
     if let Some(name) = &voxel_node.name {
         entity_commands.insert(Name::new(name.clone()));
     }
-    if let Some(label) = &voxel_node.model_label {
-        let Some(model) = scene.models.get(label) else { panic!("Model not found") };
+    if let Some(model_id) = voxel_node.model_id {
+        let Some(model) = scene.models.get(model_id) else { panic!("Model not found") };
         entity_commands.insert(PbrBundle {
             mesh: model.mesh.clone(),
             material: model.material.clone(),
-            ..default()
+            ..Default::default()
         });
     } else {
         entity_commands.insert(SpatialBundle::default());
@@ -100,7 +100,7 @@ fn spawn_voxel_node_recursive(
 pub fn parse_xform_node(
     graph: &Vec<SceneNode>,
     scene_node: &SceneNode,
-    shape_names: &mut HashMap<u32, String>,
+    shape_names: &mut Vec<Option<String>>,
 ) -> VoxelNode {
     match scene_node {
         SceneNode::Transform { attributes, frames, child, layer_id } => {
@@ -108,7 +108,7 @@ pub fn parse_xform_node(
                 name: attributes.get("_name").cloned(),
                 transform: transform_from_frame(&frames[0]),
                 children: vec![],
-                model_label: None,
+                model_id: None,
                 is_hidden: parse_bool(attributes.get("_hidden").cloned()),
                 layer_id: *layer_id,
             };
@@ -123,7 +123,7 @@ fn parse_xform_child(
     graph: &Vec<SceneNode>,
     scene_node: &SceneNode,
     partial_node: &mut VoxelNode,
-    shape_names: &mut HashMap<u32, String>,
+    shape_names: &mut Vec<Option<String>>,
 ) {
     match scene_node {
         SceneNode::Transform { .. } => { panic!("expected Group or Shape node") }
@@ -133,27 +133,36 @@ fn parse_xform_child(
             }).collect();
         }
         SceneNode::Shape { attributes: _, models } => {
-            let label: String;
-            let model_id = models[0].model_id;
-            if let Some(existing_name) = shape_names.get(&model_id) {
-                // existing shape, ignore name of parent xform
-                label = existing_name.to_string();
-            } else if let Some(parent_name) = &partial_node.name {
-                if shape_names.iter().filter_map(|(_, value)| {
-                    if value == parent_name { Some(value) } else { None }
-                } ).collect::<Vec<&String>>().len() == 0 {
-                    label = parent_name.to_string();
-                } else {
-                    // disambiguate name by appending model id
-                    label = format!("{}-{}", parent_name, model_id);
+            let model_id = models[0].model_id as usize;
+            partial_node.model_id = Some(model_id);
+            if let Some(existing_name) = &shape_names[model_id] {
+                if existing_name.starts_with("model-") {
+                    if let Some(parent_name) = &partial_node.name {
+                        // overwrite anonymous "model-" name if better alternative exists
+                        disambiguate_name_and_add(parent_name, model_id, shape_names);
+                    }
                 }
-                shape_names.insert(model_id, label.to_string());
+                // existing shape, ignore name of parent xform
+            } else if let Some(parent_name) = &partial_node.name {
+                disambiguate_name_and_add(parent_name, model_id, shape_names);
             } else {
-                label = format!("model-{}", model_id);
-                shape_names.insert(model_id, label.to_string());
+                // disambiguated anonymous name
+                shape_names[model_id] = Some(format!("model-{}", model_id));
             }
-            partial_node.model_label = Some(label);
         }
+    }
+}
+
+fn disambiguate_name_and_add(
+    parent_name: &String,
+    model_id: usize,
+    shape_names: &mut Vec<Option<String>>
+) {
+    if shape_names.contains(&Some(parent_name.to_string())) || parent_name.is_empty() {
+         // disambiguate name by appending model id
+         shape_names[model_id] = Some(format!("{}-{}", parent_name, model_id));
+    } else {
+        shape_names[model_id] = Some(parent_name.to_string());
     }
 }
 

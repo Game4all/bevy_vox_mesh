@@ -179,18 +179,18 @@ impl VoxSceneLoader {
         
         // Scene graph
         
-        let mut shape_names = HashMap::new();
+        let mut shape_names = vec![None; file.models.len()];
         let root = voxel_scene::parse_xform_node(&file.scenes, &file.scenes[0], &mut shape_names);
-        //println!("graph {:#?}", root);
         let mut scene = VoxelScene { 
             root, 
-            models: HashMap::new(),
+            models: Vec::new(),
             layers: file.layers.iter().map(|layer| LayerInfo { name: layer.name(), is_hidden: layer.hidden() }).collect(), 
         };
         
         // Models
-        for (id, name) in shape_names {
-            let Some(model) = file.models.get(id as usize) else { continue };
+        for (index, name) in shape_names.iter().enumerate() {
+            let Some(name) = name else { continue };
+            let Some(model) = file.models.get(index) else { continue };
             let (shape, buffer, refraction_indices) = crate::voxel::load_from_model(model, &translucent_voxels);
             let mesh = crate::mesh::mesh_model(shape, &buffer);
             let mesh_handle = load_context.add_labeled_asset(name.clone(), mesh);
@@ -213,7 +213,7 @@ impl VoxSceneLoader {
                 };
                 load_context.add_labeled_asset(format!("material-{}", name), translucent_material)
             };
-            scene.models.insert(name, VoxelModel { 
+            scene.models.insert(index, VoxelModel { 
                 mesh: mesh_handle, 
                 material
             });

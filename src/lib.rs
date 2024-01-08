@@ -1,24 +1,38 @@
-//! A plugin for the bevy engine which allows loading .vox files as usable meshes.
+//! A plugin for the Bevy engine which allows loading Magica Voxel .vox files as scene graphs.
 //!
-//! ```
+//!```
 //!use bevy::prelude::*;
-//!use bevy_vox_mesh::VoxMeshPlugin;
+//!use bevy_vox_scene::VoxScenePlugin;
 //!
 //!fn main() {
-//!     App::build()
-//!        .add_plugins(DefaultPlugins)
-//!        .add_plugin(VoxMeshPlugin::default())
-//!        .add_startup_system(setup.system())
-//!        .run();
+//!    App::new()
+//!    .add_plugins((
+//!        DefaultPlugins,
+//!        VoxScenePlugin,
+//!    ))
+//!    .add_systems(Startup, setup)
+//!    .run();
 //!}
 //!
-//!fn setup(asset_loader: Res<AssetServer>) {
-//!   let mesh = asset_loader.load("my_voxel_model.vox");
-//!   // you can select what model to load from a file if it contains multiple models by adding `#Model<model number here>` to the asset path to load.
-//!   let second_mesh = asset_loader.load("my_voxel_model.vox#model1");
+//!fn setup(
+//!    mut commands: Commands,
+//!    assets: Res<AssetServer>,
+//!) {
+//!    
+//!    // Load an entire scene graph
+//!    commands.spawn(VoxelSceneBundle {
+//!        scene: assets.load("study.vox"),
+//!        transform: Transform::from_scale(Vec3::splat(0.05)),
+//!    });
+//! 
+//!    // Load a single model using the name assigned to it in MagicaVoxel
+//!    commands.spawn(PbrBundle {
+//!        mesh: assets.load("study.vox#desk"),
+//!        material: assets.load("study.vox#material"),
+//!        ..Default::default()
+//!    });
 //!}
-//!```
-
+//!``` 
 use bevy::{
     app::{App, Plugin, Update},
     asset::AssetApp,
