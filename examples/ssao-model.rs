@@ -1,7 +1,8 @@
-use bevy::{prelude::*, core_pipeline::{bloom::BloomSettings, experimental::taa::{TemporalAntiAliasPlugin, TemporalAntiAliasBundle}}, pbr::ScreenSpaceAmbientOcclusionBundle};
-use bevy_vox_scene::VoxScenePlugin;
+use bevy::{prelude::*, core_pipeline::{bloom::BloomSettings, experimental::taa::{TemporalAntiAliasPlugin, TemporalAntiAliasBundle}}, pbr::{ScreenSpaceAmbientOcclusionBundle, ScreenSpaceAmbientOcclusionSettings}, input::keyboard::KeyboardInput};
+use bevy_vox_scene::{VoxScenePlugin, VoxelSceneBundle};
 use bevy_panorbit_camera::{PanOrbitCameraPlugin, PanOrbitCamera};
 
+// Press any key to toggle SSAO
 fn main() {
     let mut app = App::new();
     
@@ -14,7 +15,8 @@ fn main() {
         color: Color::rgb_u8(128, 126, 124),
         brightness: 0.5, 
     })
-    .add_systems(Startup, setup);
+    .add_systems(Startup, setup)
+    .add_systems(Update, toggle_ssao.run_if(on_event::<KeyboardInput>()));
     
     // *Note:* TAA is not _required_ for SSAO, but
     // it enhances the look of the resulting blur effects.
@@ -26,9 +28,12 @@ fn main() {
     app.run();
 }
 
+#[derive(Component)]
+struct SSAOVisible(bool);
+
 fn setup(
     mut commands: Commands,
-    assets: Res<AssetServer>,
+    asset_server: Res<AssetServer>,
 ) {
     commands.spawn((
         Camera3dBundle {
@@ -47,16 +52,33 @@ fn setup(
         #[cfg(not(all(feature = "webgl2", target_arch = "wasm32")))]
         TemporalAntiAliasBundle::default(),
         EnvironmentMapLight { 
-            diffuse_map: assets.load("pisa_diffuse.ktx2"), 
-            specular_map: assets.load("pisa_specular.ktx2"),
+            diffuse_map: asset_server.load("pisa_diffuse.ktx2"), 
+            specular_map: asset_server.load("pisa_specular.ktx2"),
         },
+        SSAOVisible(true),
     )).insert(ScreenSpaceAmbientOcclusionBundle::default());
     
-    commands.spawn(PbrBundle {
-        // Load a single model using the name assigned to it in MagicaVoxel
-        mesh: assets.load("study.vox#computer"),
-        // This model has no glass voxels, so we can use the opaque material
-        material: assets.load("study.vox#material"),
-        ..Default::default()
+    commands.spawn(VoxelSceneBundle {
+        scene: asset_server.load("study.vox#computer"),
+        ..default()
     });
+}
+
+fn toggle_ssao(
+    mut commands: Commands,
+    keys: Res<Input<KeyCode>>,
+    mut query: Query<(Entity, &mut SSAOVisible)>,
+) {
+    let Ok((entity, mut ssao_visible)) = query.get_single_mut() else { return };
+    if keys.get_just_pressed().next().is_some() {
+        ssao_visible.0 = ! ssao_visible.0;
+        match ssao_visible.0 {
+            true => { 
+                commands.entity(entity).insert(ScreenSpaceAmbientOcclusionBundle::default()); 
+            },
+            false => {
+                commands.entity(entity).remove::<ScreenSpaceAmbientOcclusionSettings>();
+            },
+        }
+    }
 }

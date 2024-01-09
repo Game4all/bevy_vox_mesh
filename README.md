@@ -7,12 +7,12 @@
 <img height="24" src="https://img.shields.io/crates/v/bevy_vox_scene?style=for-the-badge"/>
 </a>
 
-A plugin for the bevy engine which allows loading magica voxel `.vox` files directly into usable meshes.
+A plugin for [the Bevy Engine](https://bevyengine.org) which allows loading [Magica Voxel](https://ephtracy.github.io) `.vox` files directly into a Bevy scene graph.
 `bevy_vox_scene` is forked from the excellent [`bevy_vox_mesh` crate](https://crates.io/crates/bevy_vox_mesh).
 
 ## Why `bevy-vox-scene`?
 
-`bevy_vox_scene` can load an entire scene graph from a Magica Voxel world file, and it attempts to recreate the material properties from Magica Voxel's render tab, so that you can produce a scene in Bevy that approximates Magica Voxel's raytraced renders, but at Bevy's real-time interactive framerates.
+Whereas other voxel crates load a single model with voxel colors but no other material properties, `bevy_vox_scene` can load an entire scene graph from a Magica Voxel world file, and it attempts to recreate the material properties from Magica Voxel's render tab. This means you can produce a scene in Bevy that approximates Magica Voxel's raytraced renders, but at Bevy's real-time interactive framerates.
 
 Here is the [study example scene](examples/transmission-scene.rs) as rendered by Magica Voxel's raytracer:
 ![The study scene rendered in Magica Voxel](assets/studyMV.jpg)
@@ -41,15 +41,14 @@ app.add_plugins(VoxScenePlugin)
 ```rust
 commands.spawn(VoxelSceneBundle {
     scene: assets.load("study.vox"),
-    transform: Transform::IDENTITY,
+    ..default()
 });
 ```
-Alternatively, spawn individual meshes using the name assigned to it in MagicaVoxel:
+Alternatively, spawn individual models using the name assigned to it in MagicaVoxel:
 
 ```rust
-commands.spawn(PbrBundle {
-    mesh: assets.load("study.vox#desk"),
-    material: assets.load("study.vox#material"),
+commands.spawn(VoxelSceneBundle {
+    scene: assets.load("study.vox#desk"),
     ..default()
 });
 ```
@@ -67,7 +66,7 @@ cargo run --example <example name>
 
 | Bevy version | Magica Voxel version | `bevy-vox-scene` version | 
 | ------------ | -------------- | --- |
-| 0.12          | 0.99.6 | 0.9       | 
+| 0.12         | 0.99.6               | 0.9, 0.10       | 
 
 ## Limitations and workarounds
 

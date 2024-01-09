@@ -1,5 +1,5 @@
 use bevy::{prelude::*, core_pipeline::bloom::BloomSettings};
-use bevy_vox_scene::VoxScenePlugin;
+use bevy_vox_scene::{VoxScenePlugin, VoxelSceneBundle};
 use bevy_panorbit_camera::{PanOrbitCameraPlugin, PanOrbitCamera};
 
 fn main() {
@@ -38,11 +38,9 @@ fn setup(
         },
     ));
     
-    commands.spawn(PbrBundle {
+    commands.spawn(VoxelSceneBundle {
         // Load a single model using the name assigned to it in MagicaVoxel
-        mesh: assets.load("study.vox#computer"),
-        // This model has no glass voxels, so we can use the opaque material
-        material: assets.load("study.vox#material"),
-        ..Default::default()
+        scene: assets.load("study.vox#computer"),
+        ..default()
     });
 }

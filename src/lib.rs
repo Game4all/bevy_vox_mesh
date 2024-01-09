@@ -2,7 +2,7 @@
 //!
 //!```
 //!use bevy::prelude::*;
-//!use bevy_vox_scene::VoxScenePlugin;
+//!use bevy_vox_scene::{VoxScenePlugin, VoxelSceneBundle};
 //!
 //!fn main() {
 //!    App::new()
@@ -22,14 +22,13 @@
 //!    // Load an entire scene graph
 //!    commands.spawn(VoxelSceneBundle {
 //!        scene: assets.load("study.vox"),
-//!        transform: Transform::from_scale(Vec3::splat(0.05)),
+//!        ..default()
 //!    });
 //! 
 //!    // Load a single model using the name assigned to it in MagicaVoxel
-//!    commands.spawn(PbrBundle {
-//!        mesh: assets.load("study.vox#desk"),
-//!        material: assets.load("study.vox#material"),
-//!        ..Default::default()
+//!    commands.spawn(VoxelSceneBundle {
+//!        scene: assets.load("study.vox#desk"),
+//!        ..default()
 //!    });
 //!}
 //!``` 
@@ -40,7 +39,8 @@ use bevy::{
 
 mod loader;
 mod voxel_scene;
-pub use voxel_scene::VoxelSceneBundle;
+pub use voxel_scene::{VoxelSceneBundle, VoxelLayer};
+pub use loader::VoxLoaderSettings;
 #[doc(inline)]
 use loader::VoxSceneLoader;
 mod mesh;

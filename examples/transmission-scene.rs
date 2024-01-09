@@ -67,5 +67,6 @@ fn setup(
     commands.spawn(VoxelSceneBundle {
         scene: assets.load("study.vox"),
         transform: Transform::from_scale(Vec3::splat(0.05)),
+        ..default()
     });
 }

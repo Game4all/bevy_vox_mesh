@@ -1,14 +1,14 @@
-
 use anyhow::anyhow;
 use bevy::{
     asset::{io::Reader, AssetLoader, AsyncReadExt, LoadContext, Handle},
     render::{texture::Image, render_resource::{Extent3d, TextureDimension, TextureFormat}, color::Color},
-    utils::{BoxedFuture, hashbrown::HashMap}, pbr::StandardMaterial,
+    utils::{BoxedFuture, hashbrown::HashMap}, 
+    pbr::StandardMaterial, 
 };
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-use crate::voxel_scene::{self, VoxelScene, LayerInfo, VoxelModel};
+use crate::voxel_scene::{self, VoxelScene, LayerInfo, VoxelModel, VoxelNode};
 
 /// An asset loader capable of loading models in `.vox` files as usable [`bevy::render::mesh::Mesh`]es.
 ///
@@ -56,7 +56,7 @@ impl AssetLoader for VoxSceneLoader {
             .read_to_end(&mut bytes)
             .await
             .map_err(|e| VoxLoaderError::InvalidAsset(anyhow!(e)))?;
-            Ok(self.process_vox_file(&bytes, load_context, _settings)?)
+            self.process_vox_file(&bytes, load_context, _settings)
         })
     }
     
@@ -76,7 +76,7 @@ impl VoxSceneLoader {
             Ok(data) => data,
             Err(error) => return Err(VoxLoaderError::InvalidAsset(anyhow!(error))),
         };
-        
+
         // Color
         let color_data: Vec<u8> = file.palette.iter().flat_map(|c| {
             let rgba: [u8; 4] = c.into(); 
@@ -176,23 +176,12 @@ impl VoxSceneLoader {
             ..Default::default()
         };
         let opaque_material_handle = load_context.add_labeled_asset("material".to_string(), opaque_material);
-        
-        // Scene graph
-        
-        let mut shape_names = vec![None; file.models.len()];
-        let root = voxel_scene::parse_xform_node(&file.scenes, &file.scenes[0], &mut shape_names);
-        let mut scene = VoxelScene { 
-            root, 
-            models: Vec::new(),
-            layers: file.layers.iter().map(|layer| LayerInfo { name: layer.name(), is_hidden: layer.hidden() }).collect(), 
-        };
-        
+
         // Models
-        for (index, name) in shape_names.iter().enumerate() {
-            let Some(name) = name else { continue };
-            let Some(model) = file.models.get(index) else { continue };
+        let models: Vec<VoxelModel> = file.models.iter().enumerate().map(|(index, model)| {
             let (shape, buffer, refraction_indices) = crate::voxel::load_from_model(model, &translucent_voxels);
             let mesh = crate::mesh::mesh_model(shape, &buffer);
+            let name = format!("model-{}", index);
             let mesh_handle = load_context.add_labeled_asset(name.clone(), mesh);
             let material: Handle<StandardMaterial> = if refraction_indices.is_empty() {
                 opaque_material_handle.clone()
@@ -213,11 +202,53 @@ impl VoxSceneLoader {
                 };
                 load_context.add_labeled_asset(format!("material-{}", name), translucent_material)
             };
-            scene.models.insert(index, VoxelModel { 
+            VoxelModel { 
                 mesh: mesh_handle, 
                 material
-            });
+            }
+        }).collect();
+        
+        // Scene graph
+        
+        let root = voxel_scene::parse_xform_node(&file.scenes, &file.scenes[0]);
+        let layers = file.layers.iter().map(|layer| LayerInfo { name: layer.name(), is_hidden: layer.hidden() }).collect();
+        let mut subasset_by_name: HashMap<String, usize> = HashMap::new();
+        find_subasset_names(&mut subasset_by_name, &root);
+        
+        for (name, index) in subasset_by_name {
+            let subscene = VoxelScene {
+                root: VoxelNode { 
+                    name: Some(name.clone()), 
+                    model_id: Some(0), 
+                    layer_id: u32::MAX, 
+                    ..Default::default()
+                },
+                models: vec![models[index].clone()],
+                layers: vec![]
+            };
+            load_context.add_labeled_asset(name, subscene);
         }
-        Ok(scene)
+        Ok(
+        VoxelScene { 
+            root,
+            models,
+            layers, 
+        })
+    }
+
+
+}
+
+fn find_subasset_names(
+    subassets_by_name: &mut HashMap<String, usize>,
+    node: &VoxelNode
+) {
+    if let Some(name) = &node.name {
+        if let Some(model_id) = node.model_id {
+            subassets_by_name.insert(name.to_string(), model_id);
+        }
+    }
+    for child in &node.children {
+        find_subasset_names(subassets_by_name, child);
     }
 }

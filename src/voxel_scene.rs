@@ -1,10 +1,11 @@
 use bevy::{ecs::{bundle::Bundle, component::Component, system::{Commands, Query, Res}, entity::Entity}, asset::{Handle, Asset, Assets}, transform::components::Transform, reflect::TypePath, math::{Mat4, Vec3, Mat3}, render::{mesh::Mesh, view::Visibility, prelude::SpatialBundle}, pbr::{StandardMaterial, PbrBundle}, core::Name, hierarchy::BuildChildren};
 use dot_vox::{SceneNode, Frame};
 
-#[derive(Bundle)]
+#[derive(Bundle, Default)]
 pub struct VoxelSceneBundle {
     pub scene: Handle<VoxelScene>,
     pub transform: Transform,
+    pub visibility: Visibility,
 }
 
 #[derive(Asset, TypePath)]
@@ -14,25 +15,26 @@ pub struct VoxelScene {
     pub layers: Vec<LayerInfo>,
 }
 
-pub struct LayerInfo {
-    pub name: Option<String>,
-    pub is_hidden: bool,
-}
-
-#[derive(Debug)]
+#[derive(Debug, Clone, Default)]
 pub struct VoxelNode {
-    name: Option<String>,
-    transform: Mat4,
-    children: Vec<VoxelNode>,
-    model_id: Option<usize>,
-    is_hidden: bool,
-    layer_id: u32,
+    pub name: Option<String>,
+    pub transform: Mat4,
+    pub children: Vec<VoxelNode>,
+    pub model_id: Option<usize>,
+    pub is_hidden: bool,
+    pub layer_id: u32,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct VoxelModel {
     pub mesh: Handle<Mesh>,
     pub material: Handle<StandardMaterial>,
+}
+
+#[derive(Clone)]
+pub struct LayerInfo {
+    pub name: Option<String>,
+    pub is_hidden: bool,
 }
 
 #[derive(Component, Clone)]
@@ -41,17 +43,17 @@ pub struct VoxelLayer {
     pub name: Option<String>,
 }
 
-pub fn spawn_vox_scenes(
+pub(crate) fn spawn_vox_scenes(
     mut commands: Commands,
-    query: Query<(Entity, &Transform, &Handle<VoxelScene>)>,
+    query: Query<(Entity, &Transform, &Visibility, &Handle<VoxelScene>)>,
     vox_scenes: Res<Assets<VoxelScene>>,
 ) {
-    for (root, transform, scene_handle) in query.iter() {
+    for (root, transform, visibility, scene_handle) in query.iter() {
         if let Some(scene) = vox_scenes.get(scene_handle) {
-            spawn_voxel_node_recursive(&mut commands, &scene.root, root, &scene);
+            spawn_voxel_node_recursive(&mut commands, &scene.root, root, scene);
             commands.entity(root)
             .remove::<Handle<VoxelScene>>()
-            .insert(*transform);
+            .insert((*transform, *visibility));
         }
     }
 }
@@ -92,27 +94,25 @@ fn spawn_voxel_node_recursive(
         for child in &voxel_node.children {
             let mut child_entity = builder.spawn_empty();
             let id = child_entity.id();
-            spawn_voxel_node_recursive(child_entity.commands(), &child, id, scene);
+            spawn_voxel_node_recursive(child_entity.commands(), child, id, scene);
         }
     });
 }
 
-pub fn parse_xform_node(
+pub(crate) fn parse_xform_node(
     graph: &Vec<SceneNode>,
     scene_node: &SceneNode,
-    shape_names: &mut Vec<Option<String>>,
 ) -> VoxelNode {
     match scene_node {
         SceneNode::Transform { attributes, frames, child, layer_id } => {
             let mut vox_node = VoxelNode {
                 name: attributes.get("_name").cloned(),
                 transform: transform_from_frame(&frames[0]),
-                children: vec![],
-                model_id: None,
                 is_hidden: parse_bool(attributes.get("_hidden").cloned()),
                 layer_id: *layer_id,
+                ..Default::default()
             };
-            parse_xform_child(graph, &graph[*child as usize], &mut vox_node, shape_names);
+            parse_xform_child(graph, &graph[*child as usize], &mut vox_node);
             vox_node                        
         }
         SceneNode::Group { .. } | SceneNode:: Shape { .. } => { panic!("expected Transform node") }
@@ -123,46 +123,18 @@ fn parse_xform_child(
     graph: &Vec<SceneNode>,
     scene_node: &SceneNode,
     partial_node: &mut VoxelNode,
-    shape_names: &mut Vec<Option<String>>,
 ) {
     match scene_node {
         SceneNode::Transform { .. } => { panic!("expected Group or Shape node") }
         SceneNode::Group { attributes: _, children } => {
             partial_node.children = children.iter().map(|child| {
-                parse_xform_node(graph, &graph[*child as usize], shape_names)
+                parse_xform_node(graph, &graph[*child as usize])
             }).collect();
         }
         SceneNode::Shape { attributes: _, models } => {
             let model_id = models[0].model_id as usize;
             partial_node.model_id = Some(model_id);
-            if let Some(existing_name) = &shape_names[model_id] {
-                if existing_name.starts_with("model-") {
-                    if let Some(parent_name) = &partial_node.name {
-                        // overwrite anonymous "model-" name if better alternative exists
-                        disambiguate_name_and_add(parent_name, model_id, shape_names);
-                    }
-                }
-                // existing shape, ignore name of parent xform
-            } else if let Some(parent_name) = &partial_node.name {
-                disambiguate_name_and_add(parent_name, model_id, shape_names);
-            } else {
-                // disambiguated anonymous name
-                shape_names[model_id] = Some(format!("model-{}", model_id));
-            }
         }
-    }
-}
-
-fn disambiguate_name_and_add(
-    parent_name: &String,
-    model_id: usize,
-    shape_names: &mut Vec<Option<String>>
-) {
-    if shape_names.contains(&Some(parent_name.to_string())) || parent_name.is_empty() {
-         // disambiguate name by appending model id
-         shape_names[model_id] = Some(format!("{}-{}", parent_name, model_id));
-    } else {
-        shape_names[model_id] = Some(parent_name.to_string());
     }
 }
 
