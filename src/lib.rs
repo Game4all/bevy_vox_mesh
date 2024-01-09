@@ -39,7 +39,7 @@ use bevy::{
 
 mod loader;
 mod voxel_scene;
-pub use voxel_scene::{VoxelSceneBundle, VoxelLayer};
+pub use voxel_scene::{VoxelSceneBundle, VoxelScene, VoxelLayer};
 pub use loader::VoxLoaderSettings;
 #[doc(inline)]
 use loader::VoxSceneLoader;
