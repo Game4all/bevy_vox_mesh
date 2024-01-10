@@ -1,4 +1,4 @@
-use bevy::{ecs::{bundle::Bundle, component::Component, system::{Commands, Query, Res}, entity::Entity, event::{Event, EventWriter}}, asset::{Handle, Asset, Assets}, transform::components::Transform, reflect::TypePath, math::{Mat4, Vec3, Mat3}, render::{mesh::Mesh, view::Visibility, prelude::SpatialBundle}, pbr::{StandardMaterial, PbrBundle}, core::Name, hierarchy::BuildChildren};
+use bevy::{ecs::{bundle::Bundle, component::Component, system::{Commands, Query, Res}, entity::Entity, event::{Event, EventWriter}}, asset::{Handle, Asset, Assets}, transform::components::Transform, reflect::TypePath, math::{Mat4, Vec3, Mat3, Quat, Vec3Swizzles}, render::{mesh::Mesh, view::Visibility, prelude::SpatialBundle}, pbr::{StandardMaterial, PbrBundle}, core::Name, hierarchy::BuildChildren};
 use dot_vox::{SceneNode, Frame};
 
 #[derive(Bundle, Default)]
@@ -161,7 +161,11 @@ fn transform_from_frame(frame: &Frame) -> Mat4 {
     let position = [-position.x as f32, position.z as f32, position.y as f32];
     let translation = Mat4::from_translation(Vec3::from_array(position));
     let rotation = if let Some(orientation) = frame.orientation() {
-        let mat3 = Mat3::from_cols_array_2d(&orientation.to_cols_array_2d());
+        let (rotation, scale) = &orientation.to_quat_scale();
+        let scale: Vec3 = (*scale).into();
+        let quat = Quat::from_array(*rotation);
+        let (axis, angle) = quat.to_axis_angle();
+        let mat3 = Mat3::from_axis_angle(axis.xzy(), angle) * Mat3::from_diagonal(scale);
         Mat4::from_mat3(mat3)
     } else {
         Mat4::IDENTITY
