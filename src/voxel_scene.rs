@@ -1,4 +1,4 @@
-use bevy::{ecs::{bundle::Bundle, component::Component, system::{Commands, Query, Res}, entity::Entity}, asset::{Handle, Asset, Assets}, transform::components::Transform, reflect::TypePath, math::{Mat4, Vec3, Mat3}, render::{mesh::Mesh, view::Visibility, prelude::SpatialBundle}, pbr::{StandardMaterial, PbrBundle}, core::Name, hierarchy::BuildChildren};
+use bevy::{ecs::{bundle::Bundle, component::Component, system::{Commands, Query, Res}, entity::Entity, event::{Event, EventWriter}}, asset::{Handle, Asset, Assets}, transform::components::Transform, reflect::TypePath, math::{Mat4, Vec3, Mat3}, render::{mesh::Mesh, view::Visibility, prelude::SpatialBundle}, pbr::{StandardMaterial, PbrBundle}, core::Name, hierarchy::BuildChildren};
 use dot_vox::{SceneNode, Frame};
 
 #[derive(Bundle, Default)]
@@ -8,7 +8,7 @@ pub struct VoxelSceneBundle {
     pub visibility: Visibility,
 }
 
-#[derive(Asset, TypePath)]
+#[derive(Asset, TypePath, Debug)]
 pub struct VoxelScene {
     pub root: VoxelNode,
     pub models: Vec<VoxelModel>,
@@ -31,7 +31,7 @@ pub struct VoxelModel {
     pub material: Handle<StandardMaterial>,
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct LayerInfo {
     pub name: Option<String>,
     pub is_hidden: bool,
@@ -43,14 +43,22 @@ pub struct VoxelLayer {
     pub name: Option<String>,
 }
 
+#[derive(Event)]
+pub struct VoxelNodeReady {
+    pub entity: Entity,
+    pub name: String,
+    pub layer_id: u32,
+}
+
 pub(crate) fn spawn_vox_scenes(
     mut commands: Commands,
     query: Query<(Entity, &Transform, &Visibility, &Handle<VoxelScene>)>,
     vox_scenes: Res<Assets<VoxelScene>>,
+    mut event_writer: EventWriter<VoxelNodeReady>,
 ) {
     for (root, transform, visibility, scene_handle) in query.iter() {
         if let Some(scene) = vox_scenes.get(scene_handle) {
-            spawn_voxel_node_recursive(&mut commands, &scene.root, root, scene);
+            spawn_voxel_node_recursive(&mut commands, &scene.root, root, scene, &mut event_writer);
             commands.entity(root)
             .remove::<Handle<VoxelScene>>()
             .insert((*transform, *visibility));
@@ -63,11 +71,9 @@ fn spawn_voxel_node_recursive(
     voxel_node: &VoxelNode,
     entity: Entity,
     scene: &VoxelScene,
+    event_writer: &mut EventWriter<VoxelNodeReady>,
 ) {
     let mut entity_commands = commands.entity(entity);
-    if let Some(name) = &voxel_node.name {
-        entity_commands.insert(Name::new(name.clone()));
-    }
     if let Some(model_id) = voxel_node.model_id {
         let Some(model) = scene.models.get(model_id) else { panic!("Model not found") };
         entity_commands.insert(PbrBundle {
@@ -94,9 +100,13 @@ fn spawn_voxel_node_recursive(
         for child in &voxel_node.children {
             let mut child_entity = builder.spawn_empty();
             let id = child_entity.id();
-            spawn_voxel_node_recursive(child_entity.commands(), child, id, scene);
+            spawn_voxel_node_recursive(child_entity.commands(), child, id, scene, event_writer);
         }
     });
+    if let Some(name) = &voxel_node.name {
+        entity_commands.insert(Name::new(name.clone()));
+        event_writer.send(VoxelNodeReady { entity, name: name.to_string(), layer_id: voxel_node.layer_id });
+    }
 }
 
 pub(crate) fn parse_xform_node(

@@ -176,7 +176,16 @@ impl VoxSceneLoader {
             ..Default::default()
         };
         let opaque_material_handle = load_context.add_labeled_asset("material".to_string(), opaque_material);
-
+        if has_emissive {
+            let non_emissive_material = StandardMaterial {
+                base_color_texture: Some(color_handle.clone()),
+                perceptual_roughness: if has_metallic_roughness { 1.0 } else { max_roughness },
+                metallic: if has_metallic_roughness { 1.0 } else { max_metalness },
+                metallic_roughness_texture: metallic_roughness_texture.clone(),
+                ..Default::default()
+            };
+            load_context.add_labeled_asset("material-no-emission".to_string(), non_emissive_material);
+        }
         // Models
         let models: Vec<VoxelModel> = file.models.iter().enumerate().map(|(index, model)| {
             let (shape, buffer, refraction_indices) = crate::voxel::load_from_model(model, &translucent_voxels);
@@ -211,20 +220,15 @@ impl VoxSceneLoader {
         // Scene graph
         
         let root = voxel_scene::parse_xform_node(&file.scenes, &file.scenes[0]);
-        let layers = file.layers.iter().map(|layer| LayerInfo { name: layer.name(), is_hidden: layer.hidden() }).collect();
-        let mut subasset_by_name: HashMap<String, usize> = HashMap::new();
-        find_subasset_names(&mut subasset_by_name, &root);
+        let layers: Vec<LayerInfo> = file.layers.iter().map(|layer| LayerInfo { name: layer.name(), is_hidden: layer.hidden() }).collect();
+        let mut subasset_by_name: HashMap<String, VoxelNode> = HashMap::new();
+        find_subasset_names(&mut subasset_by_name, &root, None);
         
-        for (name, index) in subasset_by_name {
+        for (name, node) in subasset_by_name {
             let subscene = VoxelScene {
-                root: VoxelNode { 
-                    name: Some(name.clone()), 
-                    model_id: Some(0), 
-                    layer_id: u32::MAX, 
-                    ..Default::default()
-                },
-                models: vec![models[index].clone()],
-                layers: vec![]
+                root: node,
+                models: models.clone(),
+                layers: layers.clone(),
             };
             load_context.add_labeled_asset(name, subscene);
         }
@@ -240,15 +244,25 @@ impl VoxSceneLoader {
 }
 
 fn find_subasset_names(
-    subassets_by_name: &mut HashMap<String, usize>,
-    node: &VoxelNode
+    subassets_by_name: &mut HashMap<String, VoxelNode>,
+    node: &VoxelNode,
+    parent_name: Option<String>
 ) {
-    if let Some(name) = &node.name {
-        if let Some(model_id) = node.model_id {
-            subassets_by_name.insert(name.to_string(), model_id);
+    let (parent_name, accumulated_name) = match (parent_name, &node.name) {
+        (None, None) => (None, None),
+        (None, Some(node_name)) => (Some(node_name.to_string()), Some(node_name.to_string())),
+        (Some(parent_name), None) => (Some(parent_name), None), // allow group name to pass down through unnamed child
+        (Some(parent_name), Some(node_name)) => {
+            let accumulated = format!("{}/{}", parent_name, node_name);
+            (Some(accumulated.clone()), Some(accumulated))
+        },
+    };
+    if let Some(name) = accumulated_name {
+        if !subassets_by_name.contains_key(&name) {
+            subassets_by_name.insert(name, node.clone());
         }
     }
     for child in &node.children {
-        find_subasset_names(subassets_by_name, child);
+        find_subasset_names(subassets_by_name, child, parent_name.clone());
     }
 }
