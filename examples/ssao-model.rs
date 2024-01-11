@@ -1,8 +1,8 @@
-use bevy::{prelude::*, core_pipeline::{bloom::BloomSettings, experimental::taa::{TemporalAntiAliasPlugin, TemporalAntiAliasBundle}}, pbr::{ScreenSpaceAmbientOcclusionBundle, ScreenSpaceAmbientOcclusionSettings}, input::keyboard::KeyboardInput};
+use bevy::{prelude::*, core_pipeline::{bloom::BloomSettings, experimental::taa::{TemporalAntiAliasPlugin, TemporalAntiAliasBundle}}, pbr::ScreenSpaceAmbientOcclusionBundle, input::keyboard::KeyboardInput};
 use bevy_vox_scene::{VoxScenePlugin, VoxelSceneBundle};
 use bevy_panorbit_camera::{PanOrbitCameraPlugin, PanOrbitCamera};
 
-// Press any key to toggle SSAO
+/// Press any key to toggle Screen Space Ambient Occlusion
 fn main() {
     let mut app = App::new();
     
@@ -59,7 +59,8 @@ fn setup(
     )).insert(ScreenSpaceAmbientOcclusionBundle::default());
     
     commands.spawn(VoxelSceneBundle {
-        scene: asset_server.load("study.vox#computer"),
+        // Load a model nested inside a group by using a `/` to separate the path components
+        scene: asset_server.load("study.vox#tank/goldfish"),
         ..default()
     });
 }
@@ -77,7 +78,7 @@ fn toggle_ssao(
                 commands.entity(entity).insert(ScreenSpaceAmbientOcclusionBundle::default()); 
             },
             false => {
-                commands.entity(entity).remove::<ScreenSpaceAmbientOcclusionSettings>();
+                commands.entity(entity).remove::<ScreenSpaceAmbientOcclusionBundle>();
             },
         }
     }

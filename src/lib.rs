@@ -39,7 +39,7 @@ use bevy::{
 
 mod loader;
 mod voxel_scene;
-pub use voxel_scene::VoxelNodeReady;
+pub use voxel_scene::VoxelEntityReady;
 pub use voxel_scene::{VoxelSceneBundle, VoxelScene, VoxelLayer};
 pub use loader::VoxLoaderSettings;
 #[doc(inline)]
@@ -57,7 +57,7 @@ impl Plugin for VoxScenePlugin {
         app
         .init_asset::<voxel_scene::VoxelScene>()
         .register_asset_loader(VoxSceneLoader)
-        .add_event::<VoxelNodeReady>()
+        .add_event::<VoxelEntityReady>()
         .add_systems(SpawnScene, voxel_scene::spawn_vox_scenes);
     }
 }
