@@ -2,8 +2,8 @@ use bevy::{
     asset::{Assets, Handle},
     ecs::system::{In, ResMut},
     math::{IVec3, Vec3},
+    mesh::Mesh,
     prelude::Res,
-    render::mesh::Mesh,
 };
 use ndshape::Shape;
 

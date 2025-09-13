@@ -6,6 +6,7 @@ use anyhow::anyhow;
 use bevy::{
     asset::{AssetLoader, LoadContext, io::Reader},
     color::LinearRgba,
+    ecs::error::BevyError,
     log::info,
     math::Vec3,
     platform::collections::HashSet,
@@ -145,14 +146,14 @@ impl VoxSceneLoader {
                 opaque_material.specular_transmission_texture = None;
             }
             opaque_material.specular_transmission = 0.0;
-            opaque_material
+            Ok::<_, BevyError>(opaque_material)
         });
         if palette.emission == MaterialProperty::VariesPerElement {
             load_context.labeled_asset_scope("material-no-emission".to_string(), |_| {
                 let mut non_emissive = translucent_material.clone();
                 non_emissive.emissive_texture = None;
                 non_emissive.emissive = LinearRgba::BLACK;
-                non_emissive
+                Ok::<_, BevyError>(non_emissive)
             });
         }
 
@@ -185,7 +186,7 @@ impl VoxSceneLoader {
                 let (cloud_voxels, has_cloud) = data.cloud_voxels(&palette.density_for_voxel);
                 if has_mesh {
                     load_context.labeled_asset_scope(format!("{}@mesh", name), |_| {
-                        crate::model::mesh::mesh_model(&visible_voxels, &data)
+                        Ok::<_, BevyError>(crate::model::mesh::mesh_model(&visible_voxels, &data))
                     });
 
                     if let Some(ior) = ior {
@@ -193,7 +194,7 @@ impl VoxSceneLoader {
                             let mut material = translucent_material.clone();
                             material.ior = ior;
                             material.thickness = data.size().min_element() as f32;
-                            material
+                            Ok::<_, BevyError>(material)
                         });
                     } else {
                         load_context.labeled_asset_scope(format!("{}@material", name), |_| {
@@ -203,13 +204,16 @@ impl VoxSceneLoader {
                                 opaque_material.specular_transmission_texture = None;
                             }
                             opaque_material.specular_transmission = 0.0;
-                            opaque_material
+                            Ok::<_, BevyError>(opaque_material)
                         });
                     }
                 }
                 if has_cloud {
                     load_context.labeled_asset_scope(format!("{}@cloud-image", name), |_| {
-                        crate::model::cloud::create_cloud_image(&cloud_voxels, &data)
+                        Ok::<_, BevyError>(crate::model::cloud::create_cloud_image(
+                            &cloud_voxels,
+                            &data,
+                        ))
                     });
                 }
                 let model = VoxelModel {
@@ -218,7 +222,9 @@ impl VoxSceneLoader {
                     has_mesh,
                     has_cloud,
                 };
-                load_context.labeled_asset_scope(format!("{}@model", name), |_| model.clone());
+                load_context.labeled_asset_scope(format!("{}@model", name), |_| {
+                    Ok::<_, BevyError>(model.clone())
+                });
                 model
             })
             .collect();
@@ -229,7 +235,7 @@ impl VoxSceneLoader {
             "voxel-context".to_string(),
             VoxelContext {
                 palette,
-                opaque_material,
+                opaque_material: opaque_material.unwrap(),
                 transmissive_material,
             },
         );

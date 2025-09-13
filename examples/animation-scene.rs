@@ -1,7 +1,7 @@
 use bevy::{input::keyboard::KeyboardInput, prelude::*};
 use bevy_vox_scene::{VoxScenePlugin, VoxelAnimationPlayer, VoxelInstanceReady};
 use utilities::{PanOrbitCamera, PanOrbitCameraPlugin};
-
+// TODO investigate warnings of missing xform
 fn main() {
     App::new()
         .add_plugins((
@@ -10,7 +10,7 @@ fn main() {
             VoxScenePlugin::default(),
         ))
         .add_systems(Startup, setup)
-        .add_systems(Update, toggle_pause.run_if(on_event::<KeyboardInput>))
+        .add_systems(Update, toggle_pause.run_if(on_message::<KeyboardInput>))
         .run();
 }
 
@@ -28,10 +28,10 @@ fn setup(mut commands: Commands, assets: Res<AssetServer>) {
     ));
 
     commands.spawn(SceneRoot(assets.load("deer.vox"))).observe(
-        |trigger: Trigger<VoxelInstanceReady>, mut commands: Commands| {
-            if trigger.event().model_name == Some("deer".to_string()) {
+        |trigger: On<VoxelInstanceReady>, mut commands: Commands| {
+            if trigger.model_name == Some("deer".to_string()) {
                 // add marker component to scope pause action
-                commands.entity(trigger.event().instance).insert(Deer);
+                commands.entity(trigger.instance).insert(Deer);
             }
         },
     );

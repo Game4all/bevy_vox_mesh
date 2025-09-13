@@ -1,12 +1,16 @@
 use std::time::Duration;
 
 use bevy::{
-    core_pipeline::{
+    core_pipeline::tonemapping::Tonemapping,
+    pbr::Atmosphere,
+    post_process::{
         bloom::Bloom,
         dof::{DepthOfField, DepthOfFieldMode},
-        post_process::ChromaticAberration,
-        tonemapping::Tonemapping,
-    }, pbr::Atmosphere, prelude::*, scene::SceneInstanceReady, time::common_conditions::on_timer
+        effect_stack::ChromaticAberration,
+    },
+    prelude::*,
+    scene::SceneInstanceReady,
+    time::common_conditions::on_timer,
 };
 use bevy_vox_scene::{
     VoxLoaderSettings, VoxScenePlugin, Voxel, VoxelInstanceReady, VoxelModel, VoxelModelInstance,
@@ -34,10 +38,10 @@ fn main() {
             DefaultPlugins,
             PanOrbitCameraPlugin,
             VoxScenePlugin {
-                global_settings: Some(VoxLoaderSettings { 
+                global_settings: Some(VoxLoaderSettings {
                     supports_remeshing: true,
                     ..default()
-                 })
+                }),
             },
         ))
         .add_systems(Startup, setup)
@@ -63,10 +67,6 @@ struct Scenes {
 fn setup(mut commands: Commands, assets: Res<AssetServer>) {
     commands.spawn((
         Camera3d::default(),
-        Camera {
-            hdr: true,
-            ..default()
-        },
         Transform::from_xyz(15.0, 40.0, 90.0).looking_at(Vec3::ZERO, Vec3::Y),
         Tonemapping::BlenderFilmic,
         Atmosphere::EARTH,
@@ -107,11 +107,11 @@ fn setup(mut commands: Commands, assets: Res<AssetServer>) {
     commands
         .spawn(
             // Load a slice of the scene
-            SceneRoot(assets.load("study.vox#workstation"))
+            SceneRoot(assets.load("study.vox#workstation")),
         )
         .observe(identify_scenery)
         .observe(
-            |_trigger: Trigger<SceneInstanceReady>, mut app_state: ResMut<NextState<AppState>>| {
+            |_trigger: On<SceneInstanceReady>, mut app_state: ResMut<NextState<AppState>>| {
                 app_state.set(AppState::Ready);
             },
         );
@@ -131,8 +131,8 @@ fn setup(mut commands: Commands, assets: Res<AssetServer>) {
 /// of the scene. Remember that the entity you probably want to act on is `trigger.event().entity`
 /// (which will be the originator of the event), not `trigger.entity()` (the [`SceneRoot`] that the
 /// observer was added to).
-fn identify_scenery(trigger: Trigger<VoxelInstanceReady>, mut commands: Commands) {
-    let Some(name) = &trigger.event().model_name else {
+fn identify_scenery(trigger: On<VoxelInstanceReady>, mut commands: Commands) {
+    let Some(name) = &trigger.model_name else {
         return;
     };
     match name.as_str() {
@@ -142,12 +142,12 @@ fn identify_scenery(trigger: Trigger<VoxelInstanceReady>, mut commands: Commands
         "workstation/computer" => {
             // Focus on the computer screen by suppling the local voxel coordinates of the center of the screen
             commands
-                .entity(trigger.event().instance)
+                .entity(trigger.instance)
                 .insert(FocalPoint(Vec3::new(0., 0., 9.)));
         }
         _ => {}
     }
-    commands.entity(trigger.event().instance).insert(Scenery);
+    commands.entity(trigger.instance).insert(Scenery);
 }
 
 /// A snowflake with an angular velocity represented by a [`Quat`]

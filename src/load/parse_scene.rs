@@ -1,13 +1,14 @@
 use bevy::{
     asset::{Handle, LoadContext},
-    ecs::{hierarchy::ChildSpawner, name::Name},
+    ecs::{error::BevyError, hierarchy::ChildSpawner, name::Name},
     image::Image,
+    light::FogVolume,
     log::warn,
     math::{Mat3, Mat4, Quat, Vec3},
-    pbr::{FogVolume, MeshMaterial3d, StandardMaterial},
+    mesh::{Mesh, Mesh3d},
+    pbr::{MeshMaterial3d, StandardMaterial},
     platform::collections::HashSet,
     prelude::{EntityWorldMut, Transform, Visibility, World},
-    render::mesh::{Mesh, Mesh3d},
     scene::Scene,
 };
 use dot_vox::{Frame, SceneNode};
@@ -78,6 +79,7 @@ pub(super) fn find_model_names(
     }
 }
 
+//TODO: consider returning a Result and bubbling up errors
 pub(super) fn parse_scene_graph(
     context: &mut LoadContext,
     graph: &Vec<SceneNode>,
@@ -199,7 +201,7 @@ fn load_xform_node(
                 // create sub-asset
                 if subassets.insert(node_name.clone()) {
                     context.labeled_asset_scope(node_name, |context| {
-                        parse_scene_graph(
+                        let scene = parse_scene_graph(
                             context,
                             graph,
                             scene_node,
@@ -208,7 +210,8 @@ fn load_xform_node(
                             subassets,
                             layers,
                             scene_scale,
-                        )
+                        );
+                        Ok::<Scene, BevyError>(scene)
                     });
                 }
             }
