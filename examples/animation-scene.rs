@@ -1,7 +1,7 @@
 use bevy::{input::keyboard::KeyboardInput, prelude::*};
 use bevy_vox_scene::{VoxScenePlugin, VoxelAnimationPlayer, VoxelInstanceReady};
 use utilities::{PanOrbitCamera, PanOrbitCameraPlugin};
-// TODO investigate warnings of missing xform
+
 fn main() {
     App::new()
         .add_plugins((

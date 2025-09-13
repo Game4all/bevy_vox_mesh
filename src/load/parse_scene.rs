@@ -316,10 +316,13 @@ fn load_xform_child(
                     ));
                 }
             } else if model_count > 1 {
-                entity.insert(VoxelAnimationPlayer {
-                    frames: (0..model_count).collect(),
-                    ..Default::default()
-                });
+                entity.insert((
+                    VoxelAnimationPlayer {
+                        frames: (0..model_count).collect(),
+                        ..Default::default()
+                    },
+                    Transform::IDENTITY,
+                ));
                 entity.with_children(|spawner| {
                     for index in 0..model_count {
                         let model = &vox_models[models[index].model_id as usize];
