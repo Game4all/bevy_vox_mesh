@@ -73,10 +73,7 @@ pub(crate) fn on_voxel_scene_ready(
     vox_scene: On<SceneInstanceReady>,
     children: Query<&Children>,
     instance: Query<&VoxelModelInstance>,
-    name_layer: Query<(
-        Option<&Name>,
-        Option<&VoxelLayer>,
-    )>,
+    name_layer: Query<(Option<&Name>, Option<&VoxelLayer>)>,
     mut commands: Commands,
 ) {
     for child in children.iter_descendants(vox_scene.entity) {

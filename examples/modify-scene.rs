@@ -1,7 +1,8 @@
 #[cfg(not(all(feature = "webgl2", target_arch = "wasm32")))]
 use bevy::anti_alias::taa::TemporalAntiAliasing;
 use bevy::{
-    camera::ScreenSpaceTransmissionQuality, core_pipeline::tonemapping::Tonemapping, input::keyboard::KeyboardInput, pbr::Atmosphere, post_process::bloom::Bloom, prelude::*
+    camera::ScreenSpaceTransmissionQuality, core_pipeline::tonemapping::Tonemapping,
+    input::keyboard::KeyboardInput, pbr::Atmosphere, post_process::bloom::Bloom, prelude::*,
 };
 use bevy_vox_scene::VoxScenePlugin;
 use rand::Rng;

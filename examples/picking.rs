@@ -63,7 +63,6 @@ fn spawn_voxels(world: &mut World) {
         .observe(on_tap_voxels.pipe(modify_voxel_model));
 }
 
-// TODO why not working?
 /// Tap with left button to add voxels, right button to erase
 fn on_tap_voxels(
     trigger: On<Pointer<Press>>,
@@ -76,7 +75,7 @@ fn on_tap_voxels(
     let Some(global_normal) = trigger.hit.normal else {
         return None;
     };
-    let Ok((instance, mesh, global_xform)) = query.get(trigger.entity) else {
+    let Ok((instance, mesh, global_xform)) = query.get(trigger.original_event_target()) else {
         return None;
     };
     let Some(model) = models.get(&instance.model) else {

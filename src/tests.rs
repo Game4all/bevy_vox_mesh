@@ -7,10 +7,24 @@ use crate::{VoxelRegion, model::queryable::OutOfBoundsError};
 
 use crate::{VoxScenePlugin, VoxelModelInstance, model::RawVoxel};
 use bevy::{
-    app::App, asset::{AssetApp, AssetPlugin, AssetServer, Assets, Handle, LoadState}, camera::visibility::VisibilityClass, ecs::{hierarchy::Children, name::Name}, image::ImagePlugin, light::FogVolume, math::{IVec3, Quat, UVec3, Vec3, Vec3A}, mesh::Mesh, pbr::{MeshMaterial3d, StandardMaterial}, platform::collections::HashSet, prelude::{
+    MinimalPlugins,
+    app::App,
+    asset::{AssetApp, AssetPlugin, AssetServer, Assets, Handle, LoadState},
+    camera::visibility::VisibilityClass,
+    ecs::{hierarchy::Children, name::Name},
+    image::ImagePlugin,
+    light::FogVolume,
+    math::{IVec3, Quat, UVec3, Vec3, Vec3A},
+    mesh::Mesh,
+    pbr::{MeshMaterial3d, StandardMaterial},
+    platform::collections::HashSet,
+    prelude::{
         Add, Commands, GlobalTransform, InheritedVisibility, Mesh3d, On, Query, Transform,
         ViewVisibility, Visibility,
-    }, scene::{Scene, ScenePlugin, SceneRoot}, transform::components::TransformTreeChanged, utils::default, MinimalPlugins
+    },
+    scene::{Scene, ScenePlugin, SceneRoot},
+    transform::components::TransformTreeChanged,
+    utils::default,
 };
 
 #[test]
@@ -368,7 +382,7 @@ async fn test_modify_voxels() {
 #[cfg(feature = "generate_voxels")]
 #[test]
 fn test_generate_voxels() {
-    use bevy::{camera::primitives::MeshAabb};
+    use bevy::camera::primitives::MeshAabb;
 
     let mut app = App::new();
     setup_app(&mut app);
