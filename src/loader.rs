@@ -64,7 +64,7 @@ impl VoxLoader {
         let palette: Vec<[f32; 4]> = file
             .palette
             .iter()
-            .map(|color| color.to_le_bytes().map(|byte| byte as f32 / u8::MAX as f32))
+            .map(|color| color.to_le_bytes().map(|byte| gamma_function(byte as f32 / u8::MAX as f32)))
             .collect();
 
         let mut default_mesh: Option<Mesh> = None;
@@ -84,5 +84,16 @@ impl VoxLoader {
         }
 
         Ok(default_mesh.context("No models found in vox file")?)
+    }
+}
+
+fn gamma_function(value: f32) -> f32 {
+    if value <= 0.0 {
+        return value;
+    }
+    if value <= 0.04045 {
+        value / 12.92 // linear falloff in dark values
+    } else {
+        ((value + 0.055) / 1.055).powf(2.4) // gamma curve in other area
     }
 }
