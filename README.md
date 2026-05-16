@@ -2,6 +2,13 @@
 <code>bevy_vox_mesh</code>
 </h1>
 
+
+# Deprecation notice 
+
+This crate has gone unmaintained since I don't use bevy anymore, please instead use [bevy_vox_scene](https://github.com/oliver-dew/bevy_vox_scene), which is maintained, and is waayyy better!
+
+---
+
 <a href="https://crates.io/crates/bevy_vox_mesh">
 <img height="24" src="https://img.shields.io/crates/v/bevy_vox_mesh?style=for-the-badge"/>
 </a>
